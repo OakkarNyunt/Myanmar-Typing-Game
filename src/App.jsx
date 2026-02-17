@@ -220,7 +220,7 @@ export default function BirdShootingGame() {
               <div className="absolute top-8 left-8 flex items-center gap-4 bg-white/10 p-3 pr-6 rounded-full backdrop-blur-md border border-white/20 shadow-2xl">
                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center overflow-hidden border-2 border-sky-400">
                   <img
-                    src="/src/images/MT PRO.png"
+                    src="/src/images/mtpro.png"
                     alt="MTPRO Logo"
                     className="w-full h-full object-cover"
                     onError={(e) => (e.target.src = "🏢")}
