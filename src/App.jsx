@@ -49,12 +49,26 @@ export default function BirdShootingGame() {
   );
 
   // --- SOUND EFFECTS ---
-  const [playBg, { stop: stopBg }] = useSound(bgMusic, {
+  const [playBg, { stop: stopBg, pause: pauseBg }] = useSound(bgMusic, {
     volume: 0.2,
     loop: true,
   });
   const [playShot] = useSound(shotSound, { volume: 0.5 });
   const [playGameOver] = useSound(gameOverSound, { volume: 0.5 });
+
+  // --- MUSIC LOGIC ---
+  // Pause/Play လုပ်တဲ့အခါ အသံကို ထိန်းချုပ်ဖို့
+  useEffect(() => {
+    if (gameState === "playing") {
+      if (!isPaused) {
+        playBg(); // Resume music
+      } else {
+        pauseBg(); // Pause music instead of stop
+      }
+    } else {
+      stopBg(); // Stop music for Menu/GameOver
+    }
+  }, [gameState, isPaused, playBg, pauseBg, stopBg]);
 
   // --- FUNCTIONS ---
   const resetGame = () => {
@@ -63,16 +77,16 @@ export default function BirdShootingGame() {
     setUserInput("");
     setScore(0);
     setLives(5);
-    setSpeedMultiplier(0.5);
+    setSpeedMultiplier(0.5); // Level ကို မူလ 0.5 ဆီ ပြန်ပို့မယ်
+    setWordIndex(0); // စာလုံးအညွှန်းကိုလည်း Reset လုပ်မယ်
     setIsPaused(false);
     setGameState("menu");
   };
 
   const startGame = (level) => {
     let baseWords = [...wordsData[level]];
-    let massiveWords = [];
-    for (let i = 0; i < 500; i++) massiveWords.push(...baseWords);
-    const shuffledWords = massiveWords.sort(() => Math.random() - 0.5);
+    // massiveWords loop ကို ဖြုတ်ပြီး baseWords ကိုပဲ Shuffle လုပ်ပါ
+    const shuffledWords = baseWords.sort(() => Math.random() - 0.5);
 
     setGameWords(shuffledWords);
     setWordIndex(0);
@@ -84,6 +98,11 @@ export default function BirdShootingGame() {
     setBirds([]);
     setUserInput("");
     playBg(); // Start Background Music
+    // *** စာလုံးကို ချက်ချင်းလာစေဖို့ spawnBird ကို တန်းခေါ်မယ် ***
+    // Timeout လေး ခဏခံပေးရင် state တွေ update ဖြစ်တာ ပိုသေချာပါတယ်
+    setTimeout(() => {
+      spawnBird();
+    }, 50);
   };
 
   const spawnBird = () => {
@@ -94,7 +113,8 @@ export default function BirdShootingGame() {
       text: currentWord,
       x: -15,
       y: Math.random() * 60 + 10,
-      speed: (Math.random() * 0.3 + 0.2) * speedMultiplier,
+      // အောက်က line မှာ အရှိန်ကို လျှော့ထားပါတယ် (0.15 + 0.1)
+      speed: (Math.random() * 0.15 + 0.2) * speedMultiplier,
       status: "flying",
     };
     setBirds((prev) => [...prev, newBird]);
@@ -127,10 +147,11 @@ export default function BirdShootingGame() {
       spawnInterval = setInterval(
         () => {
           spawnBird();
-          setSpeedMultiplier((prev) => Math.min(prev + 0.01, 4));
+          // Level တိုးနှုန်းကို 0.005 သို့ လျှော့ချလိုက်ပါ (အရင်က 0.01)
+          setSpeedMultiplier((prev) => Math.min(prev + 0.005, 3));
         },
-        Math.max(1200, 3500 - speedMultiplier * 800),
-      );
+        Math.max(1500, 4000 - speedMultiplier * 1000),
+      ); // ငှက်ထွက်နှုန်းကိုလည်း နည်းနည်းနှေးလိုက်ပါတယ်
     } else {
       stopBg(); // Stop music if paused or not playing
     }
