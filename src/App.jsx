@@ -128,7 +128,7 @@ export default function BirdShootingGame() {
       x: -15,
       y: Math.random() * 60 + 10,
       // အောက်က line မှာ အရှိန်ကို လျှော့ထားပါတယ် (0.15 + 0.1)
-      speed: (Math.random() * 0.15 + 0.2) * speedMultiplier,
+      speed: (Math.random() * 0.15 + 0.1) * speedMultiplier,
       status: "flying",
     };
     setBirds((prev) => [...prev, newBird]);
@@ -162,9 +162,9 @@ export default function BirdShootingGame() {
         () => {
           spawnBird();
           // Level တိုးနှုန်းကို 0.005 သို့ လျှော့ချလိုက်ပါ (အရင်က 0.01)
-          setSpeedMultiplier((prev) => Math.min(prev + 0.005, 3));
+          setSpeedMultiplier((prev) => Math.min(prev + 0.005, 4));
         },
-        Math.max(1500, 4000 - speedMultiplier * 1000),
+        Math.max(1000, 3000 - speedMultiplier * 900),
       ); // ငှက်ထွက်နှုန်းကိုလည်း နည်းနည်းနှေးလိုက်ပါတယ်
     } else {
       stopBg(); // Stop music if paused or not playing
@@ -228,6 +228,7 @@ export default function BirdShootingGame() {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Playing ဖြစ်နေချိန်မှာပဲ Pause ကို ပြမယ် */}
             {gameState === "playing" && (
               <button
                 onClick={() => setIsPaused(!isPaused)}
@@ -240,12 +241,16 @@ export default function BirdShootingGame() {
                 )}
               </button>
             )}
-            <button
-              onClick={resetGame}
-              className="p-3 bg-slate-100 rounded-full text-slate-600 hover:bg-red-50 hover:text-red-500 transition-colors shadow-md"
-            >
-              <RotateCcw />
-            </button>
+
+            {/* Countdown မဟုတ်တဲ့အချိန်မှာပဲ Reset ကို ပြမယ် (Bug Fix) */}
+            {gameState !== "countdown" && (
+              <button
+                onClick={resetGame}
+                className="p-3 bg-slate-100 rounded-full text-slate-600 hover:bg-red-50 hover:text-red-500 transition-colors shadow-md"
+              >
+                <RotateCcw />
+              </button>
+            )}
           </div>
 
           <div className="text-blue-500 font-black flex items-center gap-2 text-xl">
