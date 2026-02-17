@@ -17,6 +17,7 @@ import wordsData from "@/data/words.json";
 import bgMusic from "@/assets/sounds/bg-music.mp3";
 import shotSound from "@/assets/sounds/shot.mp3";
 import gameOverSound from "@/assets/sounds/gameover.wav";
+import countDownSound from "@/assets/sounds/countdown.wav";
 
 import profile from "@/assets/images/Profile.jpg";
 import logo from "@/assets/images/mtpro.png";
@@ -35,6 +36,7 @@ function MenuButton({ color, label, onClick }) {
 
 export default function BirdShootingGame() {
   // --- STATES ---
+  const [countdown, setCountdown] = useState(null); // 3, 2, 1, Go ပြဖို့
   const [gameState, setGameState] = useState("menu");
   const [isPaused, setIsPaused] = useState(false);
   const [birds, setBirds] = useState([]);
@@ -55,6 +57,7 @@ export default function BirdShootingGame() {
   });
   const [playShot] = useSound(shotSound, { volume: 0.5 });
   const [playGameOver] = useSound(gameOverSound, { volume: 0.5 });
+  const [playcountdown] = useSound(countDownSound, { volume: 0.5 });
 
   // --- MUSIC LOGIC ---
   // Pause/Play လုပ်တဲ့အခါ အသံကို ထိန်းချုပ်ဖို့
@@ -84,8 +87,7 @@ export default function BirdShootingGame() {
   };
 
   const startGame = (level) => {
-    let baseWords = [...wordsData[level]];
-    // massiveWords loop ကို ဖြုတ်ပြီး baseWords ကိုပဲ Shuffle လုပ်ပါ
+    const baseWords = [...wordsData[level]];
     const shuffledWords = baseWords.sort(() => Math.random() - 0.5);
 
     setGameWords(shuffledWords);
@@ -93,16 +95,28 @@ export default function BirdShootingGame() {
     setScore(0);
     setLives(5);
     setSpeedMultiplier(0.5);
-    setGameState("playing");
-    setIsPaused(false);
     setBirds([]);
-    setUserInput("");
-    playBg(); // Start Background Music
-    // *** စာလုံးကို ချက်ချင်းလာစေဖို့ spawnBird ကို တန်းခေါ်မယ် ***
-    // Timeout လေး ခဏခံပေးရင် state တွေ update ဖြစ်တာ ပိုသေချာပါတယ်
-    setTimeout(() => {
-      spawnBird();
-    }, 50);
+
+    setGameState("countdown"); // gameState ကို countdown သို့ ပြောင်းမယ်
+    let count = 3;
+    setCountdown(count);
+
+    playcountdown();
+
+    const timer = setInterval(() => {
+      count -= 1;
+      if (count > 0) {
+        setCountdown(count);
+      } else if (count === 0) {
+        setCountdown("GO!");
+      } else {
+        clearInterval(timer);
+        setCountdown(null);
+        setGameState("playing"); // Countdown ပြီးမှ playing သို့ ပြောင်းမယ်
+        playBg(); // Music စဖွင့်မယ်
+        spawnBird(); // ပထမဆုံးငှက်ကို တန်းလွှတ်မယ်
+      }
+    }, 800);
   };
 
   const spawnBird = () => {
@@ -241,6 +255,25 @@ export default function BirdShootingGame() {
 
         {/* GAME AREA */}
         <div className="flex-1 relative overflow-hidden bg-gradient-to-b from-sky-400 to-sky-100">
+          {/* COUNTDOWN OVERLAY */}
+
+          <AnimatePresence>
+            {gameState === "countdown" && (
+              <div className="absolute inset-0 flex items-center justify-center z-[60] bg-black/20 backdrop-blur-[2px]">
+                <motion.div
+                  key={countdown}
+                  initial={{ scale: 0, opacity: 0, rotate: -20 }}
+                  animate={{ scale: 1.2, opacity: 1, rotate: 0 }}
+                  exit={{ scale: 2, opacity: 0, filter: "blur(10px)" }}
+                  transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                  className={`text-9xl font-black ${countdown === "GO!" ? "text-yellow-400" : "text-white"} drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)]`}
+                >
+                  {countdown}
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
+
           {/* PLAYING STATE */}
           <AnimatePresence>
             {gameState === "playing" &&
