@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  --font-myanmar: "Noto Sans Myanmar", sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-[#0f172a] text-white antialiased;
+    font-family: var(--font-myanmar);
+  }
+}
+
+/* Mountain Shapes အတွက် CSS */
+.clip-mountain-left {
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+.clip-mountain-center {
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+.clip-mountain-right {
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}

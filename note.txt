@@ -1,0 +1,272 @@
+import React, { useState, useEffect } from "react";
+import {
+  Timer,
+  Flame,
+  Target,
+  Trophy,
+  RotateCcw,
+  ChevronRight,
+  Play,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import wordsData from "@/data/words.json";
+
+export default function MyanmarTypingGame() {
+  const [gameState, setGameState] = useState("menu"); // menu, playing, finished
+  const [words, setWords] = useState([]);
+  const [userInput, setUserInput] = useState("");
+  const [wordIndex, setWordIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [wpm, setWpm] = useState(0);
+  const [startTime, setStartTime] = useState(null);
+  const [isError, setIsError] = useState(false);
+
+  // Game စတင်ဖို့ (Level အလိုက် စာလုံးရွေးမယ်)
+  const startGame = (level) => {
+    const selectedWords = [...wordsData[level]].sort(() => Math.random() - 0.5);
+    setWords(selectedWords);
+    setWordIndex(0);
+    setScore(0);
+    setWpm(0);
+    setStartTime(null);
+    setUserInput("");
+    setGameState("playing");
+  };
+
+  const targetWord = words[wordIndex] || "";
+  const progress = words.length > 0 ? (wordIndex / words.length) * 100 : 0;
+
+  // WPM calculation logic
+  useEffect(() => {
+    let interval;
+    if (startTime && gameState === "playing") {
+      interval = setInterval(() => {
+        const timePassed = (Date.now() - startTime) / 60000;
+        setWpm(Math.round(wordIndex / timePassed) || 0);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [startTime, wordIndex, gameState]);
+
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    if (!startTime) setStartTime(Date.now());
+    setUserInput(value);
+
+    if (targetWord.startsWith(value)) {
+      setIsError(false);
+      if (value === targetWord) {
+        if (wordIndex < words.length - 1) {
+          setWordIndex((prev) => prev + 1);
+          setScore((prev) => prev + 10);
+          setUserInput("");
+        } else {
+          setGameState("finished");
+        }
+      }
+    } else {
+      setIsError(true);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#020617] flex items-center justify-center p-6 text-white font-myanmar overflow-hidden">
+      <div className="w-full max-w-4xl bg-white/5 border border-white/10 backdrop-blur-3xl rounded-[3rem] shadow-2xl overflow-hidden relative">
+        {/* --- MAIN MENU --- */}
+        <AnimatePresence>
+          {gameState === "menu" && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="p-12 text-center space-y-8"
+            >
+              <div className="space-y-2">
+                <h1 className="text-5xl font-black bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
+                  MYANMAR TYPING
+                </h1>
+                <p className="text-slate-400">
+                  ကျွမ်းကျင်တဲ့ တောင်တက်သမားဖြစ်ဖို့ Level တစ်ခု ရွေးချယ်ပါ
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <LevelCard
+                  title="Easy"
+                  desc="အခြေခံ ကခဂဃ များ"
+                  color="bg-blue-500"
+                  onClick={() => startGame("easy")}
+                />
+                <LevelCard
+                  title="Medium"
+                  desc="စကားလုံးတိုများ"
+                  color="bg-emerald-500"
+                  onClick={() => startGame("medium")}
+                />
+                <LevelCard
+                  title="Hard"
+                  desc="ဆင့်စာနှင့် စာလုံးရှည်များ"
+                  color="bg-rose-500"
+                  onClick={() => startGame("hard")}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* --- PLAYING STATE --- */}
+        {gameState === "playing" && (
+          <>
+            <div className="grid grid-cols-4 gap-4 p-8 border-b border-white/5 bg-white/5">
+              <StatBox
+                icon={<Timer className="text-blue-400" />}
+                label="Speed"
+                value={wpm}
+                unit="WPM"
+              />
+              <StatBox
+                icon={<Flame className="text-orange-400" />}
+                label="Score"
+                value={score}
+                unit="pts"
+              />
+              <StatBox
+                icon={<Target className="text-emerald-400" />}
+                label="Accuracy"
+                value={isError ? "Bad" : "Great"}
+              />
+              <StatBox
+                icon={<Trophy className="text-yellow-400" />}
+                label="Progress"
+                value={`${wordIndex + 1}/${words.length}`}
+              />
+            </div>
+
+            <div className="relative h-64 bg-gradient-to-t from-blue-950/40 to-transparent flex items-end justify-center">
+              {/* Animated Background Elements */}
+              <div className="absolute inset-0 opacity-10 pointer-events-none">
+                <div className="absolute bottom-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
+              </div>
+
+              <motion.div
+                animate={{
+                  bottom: `${20 + progress * 0.5}%`,
+                  x: isError ? [-5, 5, -5, 5, 0] : 0,
+                }}
+                className="absolute z-10 flex flex-col items-center"
+              >
+                <div className="bg-orange-500 p-4 rounded-[2rem] shadow-[0_0_30px_rgba(249,115,22,0.4)] text-3xl border-2 border-white/20">
+                  🧗
+                </div>
+                <div className="mt-2 bg-blue-600 px-3 py-1 rounded-full text-[10px] font-bold uppercase">
+                  Player 1
+                </div>
+              </motion.div>
+            </div>
+
+            <div className="p-12 bg-slate-900/90 text-center space-y-10">
+              <AnimatePresence mode="wait">
+                <motion.h2
+                  key={targetWord}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 1.2, opacity: 0 }}
+                  className="text-7xl font-black drop-shadow-2xl"
+                >
+                  {targetWord}
+                </motion.h2>
+              </AnimatePresence>
+
+              <input
+                type="text"
+                value={userInput}
+                onChange={handleInputChange}
+                autoFocus
+                className={`w-full max-w-xl bg-white/5 border-2 p-6 rounded-3xl text-4xl text-center focus:outline-none transition-all
+                  ${isError ? "border-red-500/50 bg-red-500/5" : "border-white/10 focus:border-blue-500 focus:bg-white/10"}
+                `}
+                placeholder="ဒီမှာ စာရိုက်ပါ..."
+              />
+
+              <div className="pt-4 space-y-2">
+                <div className="flex justify-between text-[10px] font-bold text-white/30 tracking-[0.3em] uppercase">
+                  <span>Mountain Path</span>
+                  <span>{Math.round(progress)}%</span>
+                </div>
+                <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                  <motion.div
+                    animate={{ width: `${progress}%` }}
+                    className="h-full bg-gradient-to-r from-blue-500 to-emerald-500"
+                  />
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* --- FINISHED STATE --- */}
+        {gameState === "finished" && (
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="p-20 text-center space-y-8"
+          >
+            <Trophy className="w-24 h-24 text-yellow-400 mx-auto animate-bounce" />
+            <h2 className="text-5xl font-black">အောင်မြင်ပါသည်!</h2>
+            <div className="flex justify-center gap-8">
+              <div className="text-center">
+                <p className="text-slate-400 uppercase text-xs font-bold">
+                  Your Speed
+                </p>
+                <p className="text-4xl font-black text-blue-400">{wpm} WPM</p>
+              </div>
+              <div className="text-center">
+                <p className="text-slate-400 uppercase text-xs font-bold">
+                  Total Score
+                </p>
+                <p className="text-4xl font-black text-emerald-400">{score}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setGameState("menu")}
+              className="px-10 py-5 bg-white text-black rounded-2xl font-black hover:bg-blue-400 transition-colors flex items-center mx-auto"
+            >
+              <RotateCcw className="mr-2" /> တစ်ခေါက်ပြန်ဆော့မယ်
+            </button>
+          </motion.div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Sub-components for cleaner code
+function LevelCard({ title, desc, color, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`${color} p-8 rounded-[2rem] text-left hover:scale-105 transition-transform group relative overflow-hidden`}
+    >
+      <Play className="absolute bottom-4 right-4 opacity-20 group-hover:opacity-100 transition-opacity w-12 h-12" />
+      <h3 className="text-2xl font-black mb-1 uppercase tracking-tighter">
+        {title}
+      </h3>
+      <p className="text-xs opacity-80 leading-relaxed font-bold">{desc}</p>
+    </button>
+  );
+}
+
+function StatBox({ icon, label, value, unit = "" }) {
+  return (
+    <div className="bg-white/5 p-4 rounded-[2rem] border border-white/5 flex items-center gap-4">
+      <div className="p-3 bg-white/5 rounded-2xl">{icon}</div>
+      <div className="text-left">
+        <p className="text-[10px] font-bold text-white/30 uppercase">{label}</p>
+        <p className="text-2xl font-black">
+          {value}
+          <span className="text-xs font-normal opacity-40 ml-1">{unit}</span>
+        </p>
+      </div>
+    </div>
+  );
+}
