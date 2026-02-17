@@ -40,7 +40,7 @@ export default function BirdShootingGame() {
   );
 
   // --- SOUND EFFECTS ---
-  const [playBg, { stop: stopBg }] = useSound("/src/sounds/bg-music.wav", {
+  const [playBg, { stop: stopBg }] = useSound("/src/sounds/bg-music.mp3", {
     volume: 0.2,
     loop: true,
   });
