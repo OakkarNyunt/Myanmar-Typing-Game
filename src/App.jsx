@@ -243,7 +243,7 @@ export default function BirdShootingGame() {
               <div className="absolute top-8 left-8 flex items-center gap-4 bg-white/10 p-3 pr-6 rounded-full backdrop-blur-md border border-white/20">
                 <div className="w-16 h-16 bg-white rounded-full overflow-hidden border-2 border-sky-400 shadow-inner">
                   <img
-                    src="/src/images/mtpro.png"
+                    src="/images/mtpro.png"
                     alt="Logo"
                     className="w-full h-full object-cover"
                     onError={(e) => (e.target.src = "🏢")}
@@ -303,7 +303,7 @@ export default function BirdShootingGame() {
                 </div>
                 <div className="size-25 bg-slate-700 rounded-xl overflow-hidden border-2 border-white/30">
                   <img
-                    src="/src/images/Profile.jpg"
+                    src="/images/Profile.jpg"
                     alt="Dev"
                     className="w-full h-full object-cover transition-all"
                   />
