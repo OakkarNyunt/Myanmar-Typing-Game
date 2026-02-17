@@ -12,6 +12,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import useSound from "use-sound";
 import wordsData from "@/data/words.json";
 
+// ၁။ အသံဖိုင်တွေကို ဒီမှာ တိုက်ရိုက် import လုပ်ပါ (src/assets ထဲမှာ ရှိရင် ပိုကောင်းပါတယ်)
+// တကယ်လို့ public ထဲမှာပဲ ထားချင်ရင် path ကို သေချာစစ်ပါ
+import bgMusic from "@/assets/sounds/bg-music.mp3";
+import shotSound from "@/assets/sounds/shot.mp3";
+import gameOverSound from "@/assets/sounds/gameover.wav";
+
+import profile from "@/assets/images/Profile.jpg";
+import logo from "@/assets/images/mtpro.png";
+
 // UI Components
 function MenuButton({ color, label, onClick }) {
   return (
@@ -40,12 +49,12 @@ export default function BirdShootingGame() {
   );
 
   // --- SOUND EFFECTS ---
-  const [playBg, { stop: stopBg }] = useSound("/src/sounds/bg-music.mp3", {
+  const [playBg, { stop: stopBg }] = useSound(bgMusic, {
     volume: 0.2,
     loop: true,
   });
-  const [playShot] = useSound("/src/sounds/shot.mp3", { volume: 0.5 });
-  const [playGameOver] = useSound("/src/sounds/gameover.wav", { volume: 0.5 });
+  const [playShot] = useSound(shotSound, { volume: 0.5 });
+  const [playGameOver] = useSound(gameOverSound, { volume: 0.5 });
 
   // --- FUNCTIONS ---
   const resetGame = () => {
@@ -243,7 +252,7 @@ export default function BirdShootingGame() {
               <div className="absolute top-8 left-8 flex items-center gap-4 bg-white/10 p-3 pr-6 rounded-full backdrop-blur-md border border-white/20">
                 <div className="w-16 h-16 bg-white rounded-full overflow-hidden border-2 border-sky-400 shadow-inner">
                   <img
-                    src="/images/mtpro.png"
+                    src={logo}
                     alt="Logo"
                     className="w-full h-full object-cover"
                     onError={(e) => (e.target.src = "🏢")}
@@ -303,7 +312,7 @@ export default function BirdShootingGame() {
                 </div>
                 <div className="size-25 bg-slate-700 rounded-xl overflow-hidden border-2 border-white/30">
                   <img
-                    src="/images/Profile.jpg"
+                    src={profile}
                     alt="Dev"
                     className="w-full h-full object-cover transition-all"
                   />
