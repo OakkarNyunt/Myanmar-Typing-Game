@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import MainMenu from "@/components/MainMenu";
 import BirdShooter from "@/components/BirdShooter/BirdShooter"; // နဂိုရှိပြီးသား ငှက်ပစ်ဂိမ်း
-import MountainClimb from "@/components/MountainClimb/MountainClimb";
+import MountainClimb from "@/components/mountainClimb/MountainClimb";
 
 export default function App() {
   const [currentGame, setCurrentGame] = useState("menu");
