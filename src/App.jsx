@@ -235,7 +235,7 @@ export default function BirdShootingGame() {
     <div className="min-h-screen bg-sky-100 flex items-center justify-center p-0 overflow-hidden font-myanmar">
       <div className="w-full h-screen bg-white shadow-2xl relative overflow-hidden flex flex-col">
         {/* HEADER AREA */}
-        {/* HEADER AREA */}
+
         <div className="p-6 bg-white/80 backdrop-blur-md border-b-2 border-slate-100 flex justify-between items-center z-30">
           <div className="flex gap-8">
             <div className="flex items-center gap-3 bg-slate-50 px-5 py-2 rounded-2xl border border-slate-100 shadow-sm">
