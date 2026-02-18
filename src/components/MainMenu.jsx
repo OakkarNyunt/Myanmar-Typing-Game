@@ -1,8 +1,8 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Play, ShieldCheck, User } from "lucide-react";
-import logo from "../assets/images/mtpro.png";
-import profile from "../assets/images/Profile.jpg";
+import logo from "@/assets/images/mtpro.png";
+import profile from "@/assets/images/Profile.jpg";
 
 export default function MainMenu({ onSelectGame }) {
   const games = [
