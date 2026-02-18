@@ -62,6 +62,8 @@ export default function BirdShootingGame() {
     parseInt(localStorage.getItem("birdShooterHighScore")) || 0,
   );
 
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+
   // --- SOUND EFFECTS ---
   const [playBg, { stop: stopBg, pause: pauseBg }] = useSound(bgMusic, {
     volume: 0.2,
@@ -233,6 +235,7 @@ export default function BirdShootingGame() {
     <div className="min-h-screen bg-sky-100 flex items-center justify-center p-0 overflow-hidden font-myanmar">
       <div className="w-full h-screen bg-white shadow-2xl relative overflow-hidden flex flex-col">
         {/* HEADER AREA */}
+        {/* HEADER AREA */}
         <div className="p-6 bg-white/80 backdrop-blur-md border-b-2 border-slate-100 flex justify-between items-center z-30">
           <div className="flex gap-8">
             <div className="flex items-center gap-3 bg-slate-50 px-5 py-2 rounded-2xl border border-slate-100 shadow-sm">
@@ -250,7 +253,16 @@ export default function BirdShootingGame() {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Pause Button တစ်ခုပဲ ထားရှိပါတော့တယ် */}
+            {/* Restart Button */}
+            {gameState === "playing" && (
+              <button
+                onClick={() => setShowRestartConfirm(true)} // Confirm Box လေးကို ဖွင့်လိုက်မယ်
+                className="p-4 bg-orange-100 text-orange-600 rounded-2xl hover:bg-orange-200 transition-all active:scale-90 shadow-sm"
+              >
+                <RotateCcw size={28} />
+              </button>
+            )}
+            {/* ၂။ Pause/Play Button */}
             {gameState === "playing" && (
               <button
                 onClick={() => setIsPaused(!isPaused)}
@@ -350,12 +362,57 @@ export default function BirdShootingGame() {
                 </motion.div>
               ))}
           </AnimatePresence>
+
+          {/* CUSTOM CONFIRM MODAL */}
+          <AnimatePresence>
+            {showRestartConfirm && (
+              <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-100 flex items-center justify-center p-6">
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                  className="bg-white rounded-[2.5rem] p-10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-4 border-orange-400 max-w-sm w-full text-center relative overflow-hidden"
+                >
+                  {/* အလှဆင် တိမ်တိုက်ပုံစံ Background လေး */}
+                  <div className="absolute -top-10 -right-10 w-32 h-32 bg-orange-50 rounded-full opacity-50"></div>
+
+                  <div className="relative z-10">
+                    <div className="text-6xl mb-4">🛸</div>
+                    <h3 className="text-2xl font-black text-slate-800 mb-4">
+                      ပြန်စတော့မလား?
+                    </h3>
+
+                    <div className="flex flex-col gap-3">
+                      <button
+                        onClick={() => {
+                          setGameState("menu");
+                          setBirds([]);
+                          setShowRestartConfirm(false);
+                        }}
+                        className="py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black text-xl shadow-[0_5px_0_rgb(194,65,12)] active:translate-y-1 active:shadow-none transition-all"
+                      >
+                        အစက ပြန်စမယ်!
+                      </button>
+
+                      <button
+                        onClick={() => setShowRestartConfirm(false)}
+                        className="py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-black text-xl transition-all"
+                      >
+                        မလုပ်တော့ဘူး
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
+
           {/* MENU STATE */}
           {gameState === "menu" && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/40 backdrop-blur-sm z-50 p-6">
               {/* Logo */}
               <div className="absolute top-8 left-8 flex items-center gap-4 bg-white/10 p-3 pr-6 rounded-full backdrop-blur-md border border-white/20">
-                <div className="w-16 h-16 bg-white rounded-full overflow-hidden border-2 border-sky-400 shadow-inner">
+                <div className="w-25 h-25 bg-white rounded-full overflow-hidden border-2 border-sky-400 shadow-inner">
                   <img
                     src={logo}
                     alt="Logo"
@@ -406,16 +463,16 @@ export default function BirdShootingGame() {
 
               {/* Developer */}
               <div className="absolute bottom-4 right-8 flex items-center gap-4 bg-white/10 p-2 pr-6 rounded-2xl backdrop-blur-md border border-white/10">
-                <div className="text-right text-white leading-tight">
+                <div className="text-right text-white leading-tight space-y-2">
                   <p className="text-[10px] uppercase opacity-60 font-bold">
                     Developed By
                   </p>
                   <p className="text-lg font-black">Oakkar Nyunt</p>
-                  <p className="text-[10px] opacity-60 font-bold">
+                  <p className="text-[12px] opacity-60 font-bold">
                     oakkarnyunt@gmail.com
                   </p>
                 </div>
-                <div className="size-25 bg-slate-700 rounded-xl overflow-hidden border-2 border-white/30">
+                <div className="size-40 bg-slate-700 rounded-xl overflow-hidden border-2 border-white/30">
                   <img
                     src={profile}
                     alt="Dev"
@@ -567,7 +624,7 @@ export default function BirdShootingGame() {
 
               {/* ၄။ Developer Profile Section */}
               <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-3xl w-full border border-slate-100">
-                <div className="w-16 h-16 bg-white rounded-xl overflow-hidden border-2 border-white shadow-md">
+                <div className="w-25 h-25 bg-white rounded-xl overflow-hidden border-2 border-white shadow-md">
                   <img
                     src={profile}
                     alt="Dev"
@@ -581,7 +638,7 @@ export default function BirdShootingGame() {
                   <p className="text-lg font-black text-slate-900">
                     Oakkar Nyunt
                   </p>
-                  <p className="text-[10px] opacity-70">
+                  <p className="text-[12px] opacity-70">
                     oakkarnyunt@gmail.com
                   </p>
                 </div>
