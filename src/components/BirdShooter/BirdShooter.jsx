@@ -21,6 +21,7 @@ import countDownSound from "@/assets/sounds/countdown.wav";
 
 import profile from "@/assets/images/Profile.jpg";
 import logo from "@/assets/images/mtpro.png";
+import { ArrowLeft } from "lucide-react";
 
 // Configurations
 const BIRD_COLORS = [
@@ -46,7 +47,7 @@ function MenuButton({ color, label, onClick }) {
   );
 }
 
-export default function BirdShootingGame() {
+export default function BirdShootingGame({ onBack }) {
   // --- STATES ---
   const [countdown, setCountdown] = useState(null); // 3, 2, 1, Go ပြဖို့
   const [gameState, setGameState] = useState("menu");
@@ -235,20 +236,29 @@ export default function BirdShootingGame() {
     <div className="min-h-screen bg-sky-100 flex items-center justify-center p-0 overflow-hidden font-myanmar">
       <div className="w-full h-screen bg-white shadow-2xl relative overflow-hidden flex flex-col">
         {/* HEADER AREA */}
-
         <div className="p-6 bg-white/80 backdrop-blur-md border-b-2 border-slate-100 flex justify-between items-center z-30">
-          <div className="flex gap-8">
-            <div className="flex items-center gap-3 bg-slate-50 px-5 py-2 rounded-2xl border border-slate-100 shadow-sm">
-              <span className="text-3xl">🏆</span>
-              <span className="text-2xl font-black text-slate-700">
-                {score}
-              </span>
-            </div>
-            <div className="flex items-center gap-3 bg-slate-50 px-5 py-2 rounded-2xl border border-slate-100 shadow-sm">
-              <span className="text-3xl">❤️</span>
-              <span className="text-2xl font-black text-slate-700">
-                {lives}
-              </span>
+          <div className="flex items-center gap-6">
+            {/* Back Button ကို အရှေ့ဆုံးက ထည့်ထားပါတယ် */}
+            <button
+              onClick={onBack}
+              className="p-3 bg-slate-100 text-slate-600 rounded-2xl hover:bg-slate-200 transition-all active:scale-90"
+            >
+              <ArrowLeft size={28} />
+            </button>
+
+            <div className="flex gap-4">
+              <div className="flex items-center gap-3 bg-slate-50 px-5 py-2 rounded-2xl border border-slate-100 shadow-sm">
+                <span className="text-3xl">🏆</span>
+                <span className="text-2xl font-black text-slate-700">
+                  {score}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 bg-slate-50 px-5 py-2 rounded-2xl border border-slate-100 shadow-sm">
+                <span className="text-3xl">❤️</span>
+                <span className="text-2xl font-black text-slate-700">
+                  {lives}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -256,13 +266,14 @@ export default function BirdShootingGame() {
             {/* Restart Button */}
             {gameState === "playing" && (
               <button
-                onClick={() => setShowRestartConfirm(true)} // Confirm Box လေးကို ဖွင့်လိုက်မယ်
+                onClick={() => setShowRestartConfirm(true)}
                 className="p-4 bg-orange-100 text-orange-600 rounded-2xl hover:bg-orange-200 transition-all active:scale-90 shadow-sm"
               >
                 <RotateCcw size={28} />
               </button>
             )}
-            {/* ၂။ Pause/Play Button */}
+
+            {/* Pause/Play Button */}
             {gameState === "playing" && (
               <button
                 onClick={() => setIsPaused(!isPaused)}
