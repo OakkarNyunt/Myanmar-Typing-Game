@@ -87,29 +87,51 @@ export default function MainMenu({ onSelectGame }) {
         ))}
       </div>
 
-      {/* Developer Profile Section (အသစ်ထည့်ထားသည်) */}
+      {/* Developer Profile Section */}
       <motion.div
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8 }}
-        className="mt-20 flex items-center gap-6 bg-white/5 p-4 pr-10 rounded-4xl border border-white/10 backdrop-blur-sm"
+        animate={{
+          opacity: 1,
+          x: [-20, 20, -20], // ဘယ်ဘက်နဲ့ ညာဘက်ကို ရွေ့ရန်
+          y: [-10, 10, -10], // အပေါ်နဲ့ အောက်ကိုပါ တွဲရွေ့ရန် (ထောင့်ဖြတ် effect ရစေဖို့)
+        }}
+        transition={{
+          opacity: { duration: 0.8, delay: 0.8 },
+          x: {
+            duration: 6, // ၆ စက္ကန့်ကြာမှ တစ်ပတ်ပြည့်မည် (အရမ်းငြိမ့်ညောင်းစေရန်)
+            repeat: Infinity,
+            ease: "easeInOut",
+          },
+          y: {
+            duration: 4, // y-axis ကို duration မတူအောင် ထားခြင်းဖြင့် ပိုပြီး သဘာဝကျကျ လွင့်နေပါမယ်
+            repeat: Infinity,
+            ease: "easeInOut",
+          },
+        }}
+        className="mt-15 flex items-center gap-6 bg-white/5 p-4 pr-10 rounded-4xl border border-white/10 backdrop-blur-sm shadow-2xl"
       >
+        {/* Profile Image with Glow */}
         <div className="relative">
-          <div className="absolute inset-0 bg-sky-500 rounded-2xl blur-md opacity-50"></div>
+          <div className="absolute inset-0 bg-sky-500 rounded-2xl blur-md opacity-40"></div>
           <img
             src={profile}
             alt="Oakkar Nyunt"
-            className="relative w-30 h-30 rounded-2xl object-cover border-2 border-white/20 shadow-2xl"
+            className="relative size-40 rounded-2xl object-cover border-2 border-white/20 shadow-2xl"
           />
         </div>
+
+        {/* Text Info */}
         <div className="text-left">
           <p className="text-[10px] uppercase font-black text-sky-400 tracking-[3px] mb-1">
             Lead Developer
           </p>
-          <h3 className="text-2xl font-black text-white">Oakkar Nyunt</h3>
-          <div className="flex gap-2 mt-1 justify-center items-center">
+          <h3 className="text-2xl font-black text-white tracking-tight">
+            Oakkar Nyunt
+          </h3>
+
+          <div className="flex gap-2 mt-2 items-center">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            <p className="text-[12px] text-slate-400 font-bold">
+            <p className="text-[13px] text-slate-400 font-bold">
               oakkarnyunt@gmail.com
             </p>
           </div>

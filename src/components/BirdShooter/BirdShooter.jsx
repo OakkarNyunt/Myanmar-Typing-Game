@@ -180,9 +180,9 @@ export default function BirdShootingGame() {
         () => {
           spawnBird();
           // Level တိုးနှုန်းကို 0.005 သို့ လျှော့ချလိုက်ပါ (အရင်က 0.01)
-          setSpeedMultiplier((prev) => Math.min(prev + 0.005, 4));
+          setSpeedMultiplier((prev) => Math.min(prev + 0.004, 4));
         },
-        Math.max(1000, 3000 - speedMultiplier * 900),
+        Math.max(800, 2500 - speedMultiplier * 900),
       ); // ငှက်ထွက်နှုန်းကိုလည်း နည်းနည်းနှေးလိုက်ပါတယ်
     } else {
       stopBg(); // Stop music if paused or not playing
