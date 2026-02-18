@@ -22,6 +22,18 @@ import countDownSound from "@/assets/sounds/countdown.wav";
 import profile from "@/assets/images/Profile.jpg";
 import logo from "@/assets/images/mtpro.png";
 
+// Configurations
+const BIRD_COLORS = [
+  "text-blue-500",
+  "text-red-500",
+  "text-green-500",
+  "text-yellow-500",
+  "text-purple-500",
+  "text-pink-500",
+  "text-orange-500",
+];
+const BIRD_EMOJIS = ["🐦", "🦜", "🕊️", "🦆", "🦉", "🦅"];
+
 // UI Components
 function MenuButton({ color, label, onClick }) {
   return (
@@ -122,14 +134,17 @@ export default function BirdShootingGame() {
   const spawnBird = () => {
     if (gameWords.length === 0) return;
     const currentWord = gameWords[wordIndex % gameWords.length];
+
     const newBird = {
       id: Date.now() + Math.random(),
       text: currentWord,
       x: -15,
       y: Math.random() * 60 + 10,
-      // အောက်က line မှာ အရှိန်ကို လျှော့ထားပါတယ် (0.15 + 0.1)
       speed: (Math.random() * 0.15 + 0.1) * speedMultiplier,
       status: "flying",
+      // ဒီ ၂ ကြောင်း အသစ်ထည့်ပါ
+      color: BIRD_COLORS[Math.floor(Math.random() * BIRD_COLORS.length)],
+      emoji: BIRD_EMOJIS[Math.floor(Math.random() * BIRD_EMOJIS.length)],
     };
     setBirds((prev) => [...prev, newBird]);
     setWordIndex((prev) => prev + 1);
@@ -215,7 +230,7 @@ export default function BirdShootingGame() {
 
   return (
     <div className="min-h-screen bg-sky-100 flex items-center justify-center p-6 font-myanmar text-slate-800">
-      <div className="w-full max-w-5xl bg-white border-8 border-white shadow-2xl rounded-[3rem] overflow-hidden relative h-[750px] flex flex-col">
+      <div className="w-full max-w-5xl bg-white border-8 border-white shadow-2xl rounded-[3rem] overflow-hidden relative h-187.5 flex flex-col">
         {/* HEADER STATS */}
         <div className="flex justify-between items-center p-6 bg-white border-b-2 border-slate-100 z-50 shadow-sm">
           <div className="flex gap-4 italic font-black text-lg">
@@ -232,7 +247,11 @@ export default function BirdShootingGame() {
             {gameState === "playing" && (
               <button
                 onClick={() => setIsPaused(!isPaused)}
-                className={`p-3 rounded-full shadow-md transition-all ${isPaused ? "bg-green-500 text-white animate-pulse" : "bg-slate-100 text-slate-600"}`}
+                className={`p-3 rounded-full shadow-md transition-all ${
+                  isPaused
+                    ? "bg-green-500 text-white animate-pulse"
+                    : "bg-slate-100 text-slate-600"
+                }`}
               >
                 {isPaused ? (
                   <Play fill="currentColor" />
@@ -242,8 +261,8 @@ export default function BirdShootingGame() {
               </button>
             )}
 
-            {/* Countdown မဟုတ်တဲ့အချိန်မှာပဲ Reset ကို ပြမယ် (Bug Fix) */}
-            {gameState !== "countdown" && (
+            {/* Home Screen (menu) နဲ့ Countdown မဟုတ်တဲ့အချိန်မှာပဲ Reset ကို ပြမယ် (ပြင်ဆင်ပြီး) */}
+            {gameState !== "menu" && gameState !== "countdown" && (
               <button
                 onClick={resetGame}
                 className="p-3 bg-slate-100 rounded-full text-slate-600 hover:bg-red-50 hover:text-red-500 transition-colors shadow-md"
@@ -259,12 +278,12 @@ export default function BirdShootingGame() {
         </div>
 
         {/* GAME AREA */}
-        <div className="flex-1 relative overflow-hidden bg-gradient-to-b from-sky-400 to-sky-100">
+        <div className="flex-1 relative overflow-hidden bg-linear-to-b from-sky-400 to-sky-100">
           {/* COUNTDOWN OVERLAY */}
 
           <AnimatePresence>
             {gameState === "countdown" && (
-              <div className="absolute inset-0 flex items-center justify-center z-[60] bg-black/20 backdrop-blur-[2px]">
+              <div className="absolute inset-0 flex items-center justify-center z-60 bg-black/20 backdrop-blur-[2px]">
                 <motion.div
                   key={countdown}
                   initial={{ scale: 0, opacity: 0, rotate: -20 }}
@@ -280,6 +299,7 @@ export default function BirdShootingGame() {
           </AnimatePresence>
 
           {/* PLAYING STATE */}
+          {/* PLAYING STATE */}
           <AnimatePresence>
             {gameState === "playing" &&
               birds.map((bird) => (
@@ -291,12 +311,23 @@ export default function BirdShootingGame() {
                   className="absolute flex flex-col items-center z-10"
                 >
                   <div
-                    className={`text-6xl mb-1 ${bird.status === "dying" ? "rotate-180 scale-75" : isPaused ? "" : "animate-bounce"}`}
+                    className={`text-6xl mb-1 ${
+                      bird.status === "dying"
+                        ? "rotate-180 scale-75"
+                        : isPaused
+                          ? ""
+                          : "animate-bounce"
+                    } ${bird.color}`} // 👈 ဒီမှာ bird.color ကို သုံးထားပါတယ်
                   >
-                    {bird.status === "dying" ? "😵" : "🐦"}
+                    {/* 🐦 အစား bird.emoji ကို ပြောင်းသုံးလိုက်ပါတယ် */}
+                    {bird.status === "dying" ? "😵" : bird.emoji}
                   </div>
                   <div
-                    className={`px-5 py-1.5 rounded-full font-bold shadow-xl border-2 text-lg ${bird.status === "dying" ? "bg-red-500 text-white border-red-200" : "bg-white text-slate-700 border-sky-200"}`}
+                    className={`px-5 py-1.5 rounded-full font-bold shadow-xl border-2 text-lg ${
+                      bird.status === "dying"
+                        ? "bg-red-500 text-white border-red-200"
+                        : "bg-white text-slate-700 border-sky-200"
+                    }`}
                   >
                     {bird.text}
                   </div>
@@ -382,7 +413,7 @@ export default function BirdShootingGame() {
 
           {/* GAME OVER STATE */}
           {gameState === "gameover" && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-950/90 backdrop-blur-lg z-[100] text-white">
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-950/90 backdrop-blur-lg z-100 text-white">
               <motion.div
                 initial={{ scale: 0.5 }}
                 animate={{ scale: 1 }}
@@ -412,15 +443,31 @@ export default function BirdShootingGame() {
 
         {/* INPUT AREA */}
         {gameState === "playing" && (
-          <div className="p-10 bg-white border-t-4 border-slate-50 flex justify-center items-center shadow-inner">
+          <div className="p-8 bg-white border-t-4 border-slate-50 flex justify-center items-center shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
             <input
               type="text"
               value={userInput}
               onChange={handleInput}
               autoFocus
               disabled={isPaused}
-              className={`w-full max-w-2xl border-4 p-8 rounded-[2.5rem] text-4xl text-center transition-all ${isPaused ? "bg-slate-100 border-slate-200 opacity-50" : "bg-slate-50 border-sky-100 focus:border-sky-400 focus:bg-white shadow-xl focus:outline-none"}`}
-              placeholder={isPaused ? "ဂိမ်းရပ်ထားပါသည်..." : "စာရိုက်ပါ..."}
+              className={`
+        w-full max-w-2xl border-4 p-6 rounded-4xl
+        text-3xl text-center font-bold tracking-wide
+        transition-all duration-300
+        ${
+          isPaused
+            ? "bg-slate-100 border-slate-200 text-slate-400 opacity-50"
+            : "bg-white border-sky-400 text-slate-800 shadow-[0_0_25px_rgba(56,189,248,0.2)] focus:outline-none focus:ring-4 focus:ring-sky-100"
+        }
+      `}
+              style={{
+                fontFamily: "'Pyidaungsu', sans-serif", // မြန်မာစာအတွက် သေချာတဲ့ Font သုံးရန်
+                lineHeight: "1.6", // စာလုံးဆင့်တွေ မပြတ်သွားအောင်
+                caretColor: "#38bdf8", // ရိုက်နေတဲ့ Cursor အရောင်ကိုပါ ထင်ရှားစေရန်
+              }}
+              placeholder={
+                isPaused ? "ဂိမ်းရပ်ထားပါသည်..." : "ဒီမှာ စာရိုက်ပါ..."
+              }
             />
           </div>
         )}

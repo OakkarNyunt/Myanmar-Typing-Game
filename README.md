@@ -1,2 +1,2 @@
-Test & Downloaw APP
+Test & Download APP
 https://myanmartypinggame.vercel.app
