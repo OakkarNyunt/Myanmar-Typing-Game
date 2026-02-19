@@ -29,6 +29,8 @@ export default function SprintMarathon({ onBack }) {
     bg: new Audio("./sounds/bg_music.mp3"),
     win: new Audio("./sounds/gamee-win.wav"),
     lose: new Audio("./sounds/lose.wav"),
+    type: new Audio("./sounds/typingsound.mp3"), // စာရိုက်သံ
+    wrong: new Audio("./sounds/wrongtype.wav"), // အမှားသံ
   });
 
   useEffect(() => {
@@ -59,7 +61,9 @@ export default function SprintMarathon({ onBack }) {
     const handleKey = (e) => {
       if (gameState !== "PLAY") return;
 
-      // ၁။ Escape keys စသည်တို့ကို ဖယ်ထုတ်ထားရန်
+      const s = sounds.current; // sounds ကို variable ပြန်ပေးရပါမယ်
+
+      // ၁။ PAUSE လုပ်ရန်
       if (e.key === "Escape") {
         setGameState("PAUSE");
         return;
@@ -72,7 +76,7 @@ export default function SprintMarathon({ onBack }) {
         return;
       }
 
-      // ၃။ အမှားရှိနေရင် (isError === true) စာလုံးအသစ် ထပ်ရိုက်ခွင့်မပေးပါ (ဒီမှာတင် ရပ်ထားမယ်)
+      // ၃။ အမှားရှိနေရင် ထပ်ရိုက်ခွင့်မပေးပါ
       if (isError) return;
 
       // ၄။ Character ရိုက်နှိပ်ခြင်းကို စစ်ဆေးခြင်း
@@ -81,7 +85,10 @@ export default function SprintMarathon({ onBack }) {
         const expectedChar = word[nextCharIndex];
 
         if (e.key === expectedChar) {
-          // မှန်ရင် ရှေ့ဆက်မယ်
+          // --- မှန်ရင် Typing အသံပေးမယ် ---
+          s.type.currentTime = 0;
+          s.type.play().catch(() => {});
+
           const newTyped = typed + e.key;
           setTyped(newTyped);
           setIsError(false);
@@ -92,10 +99,13 @@ export default function SprintMarathon({ onBack }) {
               setPlayerX((prev) => prev + 250);
               setWord(getNextWord(level.dbKey));
               setTyped("");
-            }, 50); // စာလုံးအရောင်ပြောင်းတာ မြင်သာအောင် ခေတ္တစောင့်ပေးခြင်း
+            }, 50);
           }
         } else {
-          // မှားရင် error ပြမယ်၊ logic ကို ဒီမှာတင် ဖြတ်ချလိုက်မယ် (ဒါကြောင့် နောက်တစ်လုံး ရိုက်မရတော့ဘူး)
+          // --- မှားရင် Error အသံပေးမယ် ---
+          s.wrong.currentTime = 0;
+          s.wrong.play().catch(() => {});
+
           setIsError(true);
         }
       }
@@ -104,6 +114,7 @@ export default function SprintMarathon({ onBack }) {
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [gameState, word, typed, level, isError, getNextWord]);
+
   // Game Logic & Result Sounds
   useEffect(() => {
     let interval;

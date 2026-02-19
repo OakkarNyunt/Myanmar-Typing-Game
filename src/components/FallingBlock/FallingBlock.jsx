@@ -1,0 +1,242 @@
+import React, { useState, useEffect, useCallback, useRef } from "react";
+
+const GAME_WIDTH = 600;
+const GAME_HEIGHT = 700;
+
+export default function FallingBlocks({ onBack }) {
+  const [wordData, setWordData] = useState(null);
+  const [gameState, setGameState] = useState("START");
+  const [fallingWords, setFallingWords] = useState([]);
+  const [typed, setTyped] = useState("");
+  const [score, setScore] = useState(0);
+  const [lives, setLives] = useState(5);
+  const [language, setLanguage] = useState("english");
+  const [diffLevel, setDiffLevel] = useState("EASY");
+
+  const inputRef = useRef(null); // မြန်မာစာ မှန်ကန်ဖို့အတွက် input ref
+  const sounds = useRef({
+    type: new Audio("./sounds/typingsound.mp3"),
+    gameOver: new Audio("./sounds/lose.wav"),
+  });
+
+  const spawnWord = useCallback(() => {
+    if (!wordData || gameState !== "PLAY") return;
+    const list = wordData[language]?.[diffLevel] || [];
+    if (list.length === 0) return;
+
+    const text = list[Math.floor(Math.random() * list.length)];
+    const duration = diffLevel === "HARD" ? 4 : diffLevel === "MEDIUM" ? 6 : 8;
+
+    const newWord = {
+      id: `word-${Math.random()}`,
+      text,
+      x: Math.random() * (GAME_WIDTH - 150),
+      duration: duration,
+    };
+    setFallingWords((prev) => [...prev, newWord]);
+  }, [wordData, language, diffLevel, gameState]);
+
+  const handleAnimationEnd = (id) => {
+    setFallingWords((prev) => prev.filter((w) => w.id !== id));
+    setLives((l) => {
+      const newLife = Math.max(0, l - 1);
+      if (newLife === 0) setGameState("GAMEOVER");
+      return newLife;
+    });
+  };
+
+  // မြန်မာစာ ရိုက်ချက်များကို စစ်ဆေးသည့် Logic
+  const handleInputChange = (e) => {
+    if (gameState !== "PLAY") return;
+    const currentInput = e.target.value;
+    setTyped(currentInput);
+
+    // စကားလုံး အပြည့်အစုံ ကိုက်ညီမှု ရှိမရှိ စစ်ဆေးခြင်း
+    const matchIdx = fallingWords.findIndex((w) => w.text === currentInput);
+    if (matchIdx !== -1) {
+      sounds.current.type.currentTime = 0;
+      sounds.current.type.play().catch(() => {});
+
+      setFallingWords((prev) => prev.filter((_, i) => i !== matchIdx));
+      setScore((s) => s + 10);
+      setTyped("");
+      if (inputRef.current) inputRef.current.value = ""; // မှန်သွားရင် input ကို ရှင်းပစ်မယ်
+    } else {
+      // ရိုက်နေတဲ့ စာလုံးက ကျနေတဲ့ block တွေထဲမှာ လုံးဝ မရှိတော့ရင် Reset လုပ်မယ်
+      const potentialMatch = fallingWords.some((w) =>
+        w.text.startsWith(currentInput),
+      );
+      if (!potentialMatch && currentInput.length > 0) {
+        // မြန်မာစာအတွက် သဝေထိုး ကိစ္စကြောင့် နောက်ဆုံး တစ်လုံးကိုပဲ စစ်တာမျိုး မလုပ်ဘဲ
+        // ပိုပြီး flexible ဖြစ်အောင် ထားပေးထားပါတယ်
+      }
+    }
+  };
+
+  useEffect(() => {
+    let spawner;
+    if (gameState === "PLAY") {
+      spawner = setInterval(spawnWord, 2000);
+      if (inputRef.current) inputRef.current.focus(); // Play လုပ်တာနဲ့ Input ကို focus ပေးမယ်
+    }
+    return () => clearInterval(spawner);
+  }, [gameState, spawnWord]);
+
+  useEffect(() => {
+    fetch("./data/wordsForFallingBlock.json")
+      .then((res) => res.json())
+      .then(setWordData);
+  }, []);
+
+  return (
+    <div
+      className="fixed inset-0 bg-zinc-950 flex flex-col items-center justify-center font-sans text-white select-none"
+      onClick={() => inputRef.current?.focus()}
+    >
+      <style>{`
+        @keyframes fall {
+          from { transform: translateY(-50px); }
+          to { transform: translateY(${GAME_HEIGHT}px); }
+        }
+        .falling-block {
+          animation-name: fall;
+          animation-timing-function: linear;
+          animation-fill-mode: forwards;
+          will-change: transform;
+        }
+        .paused { animation-play-state: paused; }
+      `}</style>
+
+      {/* Hidden Input for handling Myanmar Unicode properly */}
+      <input
+        ref={inputRef}
+        type="text"
+        className="absolute opacity-0 pointer-events-none"
+        onChange={handleInputChange}
+        onBlur={() => gameState === "PLAY" && inputRef.current?.focus()}
+        autoFocus
+      />
+
+      {/* Header HUD */}
+      <div className="absolute top-8 flex items-center gap-12 text-2xl font-black z-50">
+        <div className="text-cyan-400">SCORE: {score}</div>
+        <div className="text-rose-500">LIVES: {"❤️".repeat(lives)}</div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setGameState(gameState === "PLAY" ? "PAUSE" : "PLAY");
+          }}
+          className="bg-blue-600/20 border border-blue-500/30 px-4 py-1 rounded-xl text-xs font-black text-blue-400 hover:bg-blue-600 hover:text-white"
+        >
+          {gameState === "PLAY" ? "PAUSE" : "RESUME"}
+        </button>
+      </div>
+
+      {/* Game Stage Area */}
+      <div
+        style={{ width: GAME_WIDTH, height: GAME_HEIGHT }}
+        className="relative bg-zinc-900/50 border-x-2 border-b-2 border-zinc-800 rounded-b-[2.5rem] overflow-hidden backdrop-blur-sm"
+      >
+        {fallingWords.map((word) => (
+          <div
+            key={word.id}
+            onAnimationEnd={() => handleAnimationEnd(word.id)}
+            style={{
+              left: `${word.x}px`,
+              animationDuration: `${word.duration}s`,
+            }}
+            className={`falling-block absolute px-5 py-2 bg-white rounded-2xl shadow-xl flex items-center justify-center ${gameState === "PAUSE" ? "paused" : ""}`}
+          >
+            <span
+              className="text-2xl font-black text-zinc-900 tracking-tight"
+              style={{ fontFamily: "Pyidaungsu, sans-serif" }}
+            >
+              {word.text}
+              {/* Highlight logic: မြန်မာစာအတွက် split မလုပ်ဘဲ input ထဲမှာ ပါသလားပဲ စစ်ပါမယ် */}
+              {typed && word.text.startsWith(typed) && (
+                <span className="absolute inset-0 px-5 py-2 text-blue-600 overflow-hidden whitespace-nowrap">
+                  {typed}
+                </span>
+              )}
+            </span>
+          </div>
+        ))}
+
+        <div className="absolute bottom-10 w-full text-center">
+          <span className="text-4xl font-black text-white/10 tracking-widest">
+            {typed || "TYPE..."}
+          </span>
+        </div>
+      </div>
+
+      {/* Modals */}
+      {gameState !== "PLAY" && (
+        <div className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center backdrop-blur-md">
+          <div className="text-center p-12 bg-zinc-900 border border-white/10 rounded-[3rem] shadow-2xl w-[450px]">
+            <h1 className="text-5xl font-black mb-8 italic text-blue-500 uppercase">
+              {gameState === "PAUSE"
+                ? "Paused"
+                : gameState === "GAMEOVER"
+                  ? "Defeated"
+                  : "Falling Block"}
+            </h1>
+
+            {gameState === "START" && (
+              <div className="flex flex-col gap-6 mb-10 text-white">
+                <div className="flex bg-zinc-800 p-1 rounded-xl">
+                  {["english", "myanmar"].map((l) => (
+                    <button
+                      key={l}
+                      onClick={() => setLanguage(l)}
+                      className={`flex-1 py-2 rounded-lg font-bold capitalize ${language === l ? "bg-blue-600 text-white shadow-lg" : "text-zinc-500"}`}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  {["EASY", "MEDIUM", "HARD"].map((lvl) => (
+                    <button
+                      key={lvl}
+                      onClick={() => setDiffLevel(lvl)}
+                      className={`flex-1 py-2 rounded-xl border-2 font-black text-[10px] ${diffLevel === lvl ? "border-blue-500 bg-blue-500/10 text-blue-400" : "border-zinc-700 text-zinc-600"}`}
+                    >
+                      {lvl}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-4">
+              <button
+                onClick={() => {
+                  if (gameState === "START" || gameState === "GAMEOVER") {
+                    setFallingWords([]);
+                    setLives(5);
+                    setScore(0);
+                    setTyped("");
+                    if (inputRef.current) inputRef.current.value = "";
+                  }
+                  setGameState("PLAY");
+                }}
+                className="w-full py-5 bg-blue-600 rounded-2xl text-2xl font-black hover:bg-blue-500 transition-all uppercase"
+              >
+                {gameState === "PAUSE" ? "Continue" : "Start"}
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onBack();
+                }}
+                className="text-zinc-600 font-bold uppercase text-xs tracking-widest mt-2"
+              >
+                Main Menu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

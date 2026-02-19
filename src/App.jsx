@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import MainMenu from "@/components/MainMenu";
 import BirdShooter from "@/components/BirdShooter/BirdShooter"; // နဂိုရှိပြီးသား ငှက်ပစ်ဂိမ်း
 import RunningMarathon from "@/components/RunningMarathon/RunningMarathon";
+import FallingBlocks from "@/components/FallingBlock/FallingBlock"; // FallingBlock ကို import လုပ်လိုက်ပါပြီ
 
 export default function App() {
   const [currentGame, setCurrentGame] = useState("menu");
@@ -18,6 +19,10 @@ export default function App() {
 
       {currentGame === "mountain-climb" && (
         <RunningMarathon onBack={() => setCurrentGame("menu")} />
+      )}
+      {/* ၃။ Falling Blocks ဂိမ်း (အသစ်ထည့်သွင်းမှု) */}
+      {currentGame === "falling-block" && (
+        <FallingBlocks onBack={() => setCurrentGame("menu")} />
       )}
     </div>
   );
