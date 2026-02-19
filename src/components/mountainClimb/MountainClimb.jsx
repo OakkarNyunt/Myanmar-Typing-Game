@@ -1,189 +1,279 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Mountain, Flag, User, Cpu, Trophy, ArrowLeft } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
-const CLIMB_WORDS = [
-  "apple",
-  "mountain",
-  "climb",
-  "speed",
-  "focus",
-  "typing",
-  "success",
-  "winner",
-  "challenge",
-  "energy",
+const WORDS = [
+  "REVOLUTION",
+  "TECHNOLOGY",
+  "CHAMPIONSHIP",
+  "PERFORMANCE",
+  "INTELLIGENCE",
+  "STAMINA",
+  "MARATHON",
+  "EXCELLENCE",
+  "MOTIVATION",
+  "STRATEGY",
+  "DISCIPLINE",
+  "CONSISTENCY",
+  "VELOCITY",
+  "AMBITION",
+  "CONQUEROR",
 ];
 
-export default function MountainClimb({ onBack }) {
-  const [gameState, setGameState] = useState("select-difficulty");
-  const [difficulty, setDifficulty] = useState(null);
-  const [playerProgress, setPlayerProgress] = useState(0);
-  const [aiProgress, setAiProgress] = useState(0);
-  const [currentWord, setCurrentWord] = useState("");
-  const [userInput, setUserInput] = useState("");
-  const [winner, setWinner] = useState(null);
+const LEVELS = {
+  EASY: { aiSpeed: 0.5, dist: 3500, label: "EASY (3 MINS)" },
+  MEDIUM: { aiSpeed: 1, dist: 5000, label: "MEDIUM (3 MINS)" },
+  HARD: { aiSpeed: 1.8, dist: 6500, label: "HARD (3 MINS)" },
+  VERY_HARD: { aiSpeed: 2.5, dist: 8000, label: "VERY HARD (3 MINS)" },
+};
 
-  const AI_SPEEDS = { easy: 0.3, medium: 0.8, hard: 1.5 };
+export default function SprintMarathon({ onBack }) {
+  const [gameState, setGameState] = useState("START");
+  const [level, setLevel] = useState(LEVELS.EASY);
+  const [playerX, setPlayerX] = useState(0);
+  const [aiX, setAiX] = useState(0);
+  const [word, setWord] = useState("");
+  const [typed, setTyped] = useState("");
+  const [isError, setIsError] = useState(false);
 
-  const startGame = (level) => {
-    setDifficulty(level);
-    setGameState("playing");
-    setPlayerProgress(0);
-    setAiProgress(0);
-    setWinner(null);
-    setCurrentWord(CLIMB_WORDS[Math.floor(Math.random() * CLIMB_WORDS.length)]);
-    setUserInput("");
-  };
-
-  const handleInput = (e) => {
-    const val = e.target.value;
-    setUserInput(val);
-    if (val.trim() === currentWord) {
-      const next = playerProgress + 10;
-      setPlayerProgress(next);
-      if (next >= 100) setWinner("player");
-      else {
-        setCurrentWord(
-          CLIMB_WORDS[Math.floor(Math.random() * CLIMB_WORDS.length)],
-        );
-        setUserInput("");
-      }
-    }
+  const startRace = (lv) => {
+    setLevel(lv);
+    setPlayerX(0);
+    setAiX(0);
+    setWord(WORDS[Math.floor(Math.random() * WORDS.length)]);
+    setTyped("");
+    setIsError(false);
+    setGameState("PLAY");
   };
 
   useEffect(() => {
-    let aiInterval;
-    if (gameState === "playing" && !winner) {
-      aiInterval = setInterval(() => {
-        setAiProgress((prev) => {
-          const next = prev + AI_SPEEDS[difficulty];
-          if (next >= 100) {
-            setWinner("ai");
-            return 100;
+    const handleKey = (e) => {
+      if (gameState !== "PLAY") return;
+      const char = e.key.toUpperCase();
+
+      if (char.length === 1 && /[A-Z]/.test(char)) {
+        const nextTyped = typed + char;
+        if (word.startsWith(nextTyped)) {
+          setTyped(nextTyped);
+          setIsError(false);
+          if (nextTyped === word) {
+            setPlayerX((p) => p + 120); // စာလုံးတစ်လုံးမှန်ရင် ၁၂၀ မီတာတိုးမယ်
+            setWord(WORDS[Math.floor(Math.random() * WORDS.length)]);
+            setTyped("");
           }
-          return next;
-        });
-      }, 500);
+        } else {
+          setIsError(true);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [gameState, typed, word]);
+
+  useEffect(() => {
+    let timer;
+    if (gameState === "PLAY") {
+      timer = setInterval(() => {
+        setAiX((p) => p + level.aiSpeed * 6);
+      }, 100);
     }
-    return () => clearInterval(aiInterval);
-  }, [gameState, difficulty, winner]);
+    if (playerX >= level.dist) setGameState("WIN");
+    if (aiX >= level.dist) setGameState("LOSE");
+    return () => clearInterval(timer);
+  }, [gameState, playerX, aiX, level]);
 
   return (
-    <div className="w-full h-full bg-slate-50 flex flex-col font-myanmar">
-      <div className="p-4 flex items-center gap-4 bg-white border-b shadow-sm">
+    <div className="fixed inset-0 bg-zinc-950 flex flex-col overflow-hidden select-none font-sans text-white">
+      {/* STATUS HUD */}
+      <div className="p-6 bg-zinc-900 border-b-2 border-zinc-800 flex justify-between items-center z-50">
         <button
           onClick={onBack}
-          className="p-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+          className="px-5 py-2 bg-zinc-800 hover:bg-red-700 rounded-lg font-bold transition-all"
         >
-          <ArrowLeft size={24} />
+          EXIT
         </button>
-        <h2 className="text-xl font-black text-slate-700 uppercase italic">
-          Mountain Climber
-        </h2>
+        <div className="text-center bg-zinc-800 px-6 py-1 rounded-full border border-zinc-700">
+          <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest">
+            Race Progress
+          </p>
+          <div className="w-48 h-2 bg-zinc-700 rounded-full mt-1 overflow-hidden">
+            <motion.div
+              className="h-full bg-blue-500"
+              animate={{ width: `${(playerX / level.dist) * 100}%` }}
+            />
+          </div>
+        </div>
+        <div className="flex gap-6">
+          <div className="text-right">
+            <p className="text-[10px] text-blue-400 font-bold">YOU</p>
+            <p className="text-xl font-black">{Math.floor(playerX)}m</p>
+          </div>
+          <div className="text-right border-l border-zinc-700 pl-6">
+            <p className="text-[10px] text-red-500 font-bold">ROBOT AI</p>
+            <p className="text-xl font-black">{Math.floor(aiX)}m</p>
+          </div>
+        </div>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center p-6">
-        {gameState === "select-difficulty" ? (
-          <motion.div
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            className="text-center space-y-6"
-          >
-            <Mountain size={100} className="mx-auto text-sky-500 mb-4" />
-            <h1 className="text-4xl font-black text-slate-800">
-              အဆင့်ရွေးချယ်ပါ
-            </h1>
-            <div className="flex flex-col gap-4">
-              <button
-                onClick={() => startGame("easy")}
-                className="px-16 py-4 bg-green-500 text-white rounded-2xl font-black text-xl shadow-[0_5px_0_rgb(21,128,61)] active:translate-y-1 transition-all"
-              >
-                EASY 🍀
-              </button>
-              <button
-                onClick={() => startGame("medium")}
-                className="px-16 py-4 bg-orange-500 text-white rounded-2xl font-black text-xl shadow-[0_5px_0_rgb(194,65,12)] active:translate-y-1 transition-all"
-              >
-                MEDIUM 🔥
-              </button>
-              <button
-                onClick={() => startGame("hard")}
-                className="px-16 py-4 bg-red-600 text-white rounded-2xl font-black text-xl shadow-[0_5px_0_rgb(153,27,27)] active:translate-y-1 transition-all"
-              >
-                HARD 💀
-              </button>
-            </div>
-          </motion.div>
-        ) : (
-          <div className="w-full max-w-2xl space-y-10">
-            {/* Race Track */}
-            <div className="relative h-72 bg-white rounded-[2.5rem] border-4 border-slate-200 p-8 flex justify-around items-end shadow-inner overflow-hidden">
-              <div className="flex flex-col items-center gap-2">
+      {/* 3D-STYLE TRACK AREA */}
+      <div className="flex-1 relative bg-zinc-900 overflow-hidden flex flex-col justify-center">
+        {/* Victory/Defeat Special FX */}
+        {gameState === "WIN" && (
+          <div className="absolute inset-0 z-40 bg-blue-500/10 pointer-events-none">
+            {Array(40)
+              .fill(0)
+              .map((_, i) => (
                 <motion.div
-                  animate={{ y: -(playerProgress * 1.8) }}
-                  className="bg-blue-500 p-4 rounded-full text-white shadow-xl"
-                >
-                  <User size={32} />
-                </motion.div>
-                <p className="font-black text-xs text-blue-500">YOU</p>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <motion.div
-                  animate={{ y: -(aiProgress * 1.8) }}
-                  className="bg-red-500 p-4 rounded-full text-white shadow-xl"
-                >
-                  <Cpu size={32} />
-                </motion.div>
-                <p className="font-black text-xs text-red-500">AI</p>
-              </div>
-              <div className="absolute top-6 left-1/2 -translate-x-1/2 flex flex-col items-center">
-                <Flag
-                  className="text-yellow-500 animate-bounce"
-                  size={40}
-                  fill="currentColor"
+                  key={i}
+                  className="absolute w-2 h-2 bg-yellow-400"
+                  initial={{ y: -10, x: `${Math.random() * 100}%` }}
+                  animate={{ y: 1000 }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    delay: Math.random(),
+                  }}
                 />
-                <div className="w-32 h-1 border-t-4 border-dashed border-slate-200"></div>
-              </div>
-            </div>
-
-            {!winner ? (
-              <div className="text-center space-y-6">
-                <div className="text-5xl font-black bg-white px-12 py-5 rounded-3xl border-4 border-sky-400 shadow-lg text-slate-700">
-                  {currentWord}
-                </div>
-                <input
-                  autoFocus
-                  type="text"
-                  value={userInput}
-                  onChange={handleInput}
-                  className="w-full p-6 rounded-[2rem] text-3xl text-center border-4 border-slate-100 focus:border-sky-500 outline-none shadow-2xl transition-all"
-                  placeholder="ဒီမှာ စာရိုက်ပါ..."
-                />
-              </div>
-            ) : (
-              <motion.div
-                initial={{ scale: 0.8 }}
-                animate={{ scale: 1 }}
-                className="text-center space-y-6 bg-white p-12 rounded-[3rem] shadow-2xl border-b-8 border-slate-200"
-              >
-                <div className="text-7xl mb-4">
-                  {winner === "player" ? "🏆" : "🐌"}
-                </div>
-                <h3 className="text-4xl font-black text-slate-800">
-                  {winner === "player" ? "အောင်မြင်ပါသည်!" : "ရှုံးသွားပါပြီ!"}
-                </h3>
-                <button
-                  onClick={() => setGameState("select-difficulty")}
-                  className="w-full py-5 bg-sky-500 text-white rounded-2xl font-black text-xl shadow-lg hover:bg-sky-600 transition-all"
-                >
-                  ထပ်ကစားမယ်
-                </button>
-              </motion.div>
-            )}
+              ))}
           </div>
         )}
+
+        {/* Lanes */}
+        <div className="absolute inset-x-0 h-72 bg-zinc-800/50 border-y-4 border-zinc-700 z-10">
+          <div className="h-1/2 border-b-2 border-dashed border-zinc-600 flex items-center justify-end px-10">
+            <div className="text-4xl opacity-20 font-black italic">
+              FINISH LINE 🏁
+            </div>
+          </div>
+        </div>
+
+        {/* Scrolling Environment */}
+        <motion.div
+          className="absolute inset-0 flex items-center opacity-10 pointer-events-none"
+          animate={{ x: -(playerX % 2000) }}
+          transition={{ type: "linear", ease: "linear" }}
+        >
+          <div className="text-[15rem] font-black italic whitespace-nowrap">
+            CYBER SPRINT 2026 CYBER SPRINT 2026
+          </div>
+        </motion.div>
+
+        {/* ROBOT AI (Shaking & Bouncing) */}
+        <motion.div
+          className="absolute z-20"
+          animate={{ x: aiX - playerX + 200 }}
+          transition={{ type: "spring", stiffness: 40 }}
+        >
+          <motion.div
+            animate={{ y: [0, -10, 0], x: [-2, 2, -2] }}
+            transition={{ repeat: Infinity, duration: 0.3 }}
+            className="flex flex-col items-center"
+          >
+            <span className="text-8xl drop-shadow-[0_0_20px_rgba(239,68,68,0.5)]">
+              🤖
+            </span>
+            <div className="mt-2 bg-red-600 text-[10px] px-3 py-1 rounded-full font-black uppercase shadow-lg">
+              System Bot
+            </div>
+          </motion.div>
+        </motion.div>
+
+        {/* PLAYER (Centered Focus) */}
+        <div className="absolute left-[200px] z-30">
+          <div className="flex flex-col items-center relative">
+            {/* WORD BUBBLE */}
+            <AnimatePresence mode="wait">
+              {gameState === "PLAY" && (
+                <motion.div
+                  key={word}
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  className="absolute -top-32 bg-white px-8 py-4 rounded-3xl shadow-[0_0_40px_rgba(59,130,246,0.5)] min-w-[250px] text-center"
+                >
+                  <div className="text-4xl font-black tracking-[0.15em] text-zinc-900">
+                    {word.split("").map((char, i) => {
+                      let color = "text-zinc-900";
+                      if (i < typed.length) color = "text-emerald-600";
+                      else if (i === typed.length && isError)
+                        color = "text-red-600";
+                      return (
+                        <span key={i} className={color}>
+                          {char}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <div className="h-1 bg-zinc-100 mt-2 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-emerald-500"
+                      style={{
+                        width: `${(typed.length / word.length) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <motion.div
+              animate={
+                gameState === "PLAY"
+                  ? { y: [0, -30, 0], rotate: [-5, 5, -5] }
+                  : {}
+              }
+              transition={{ repeat: Infinity, duration: 0.4 }}
+              className="text-8xl filter drop-shadow-[0_0_15px_rgba(59,130,246,0.3)]"
+            >
+              🏃‍♂️
+            </motion.div>
+            <div className="mt-4 bg-blue-600 px-6 py-1.5 rounded-full text-xs font-black shadow-xl border-2 border-blue-400 uppercase">
+              You
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* MENU & LEVEL SELECTION OVERLAY */}
+      <AnimatePresence>
+        {gameState !== "PLAY" && (
+          <motion.div className="absolute inset-0 z-[100] bg-zinc-950/95 backdrop-blur-xl flex items-center justify-center p-6 text-center">
+            <div className="bg-zinc-900 border border-zinc-800 p-12 rounded-[3.5rem] shadow-2xl max-w-lg w-full">
+              <h1 className="text-5xl font-black mb-4 italic tracking-tighter text-blue-500">
+                {gameState === "START"
+                  ? "SPRINT MARATHON"
+                  : gameState === "WIN"
+                    ? "🏆 HUMAN WINS!"
+                    : "🤖 ROBOT WINS!"}
+              </h1>
+              <p className="text-zinc-500 font-bold mb-10 uppercase tracking-[0.2em] text-sm">
+                {gameState === "START"
+                  ? "3-Minute Typing Challenge"
+                  : `Final Distance: ${Math.floor(playerX)} Meters`}
+              </p>
+
+              {gameState === "START" ? (
+                <div className="flex flex-col gap-3">
+                  {Object.entries(LEVELS).map(([key, value]) => (
+                    <button
+                      key={key}
+                      onClick={() => startRace(value)}
+                      className="p-5 bg-zinc-800 hover:bg-blue-600 text-zinc-300 hover:text-white rounded-2xl font-black transition-all border border-zinc-700 hover:border-blue-400"
+                    >
+                      {value.label}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <button
+                  onClick={() => setGameState("START")}
+                  className="w-full py-6 bg-blue-600 text-white rounded-2xl font-black text-2xl shadow-xl hover:scale-105 transition-transform"
+                >
+                  RETURN TO HUB
+                </button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
