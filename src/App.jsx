@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import MainMenu from "@/components/MainMenu";
 import BirdShooter from "@/components/BirdShooter/BirdShooter"; // နဂိုရှိပြီးသား ငှက်ပစ်ဂိမ်း
-import MountainClimb from "@/components/mountainClimb/MountainClimb";
+import RunningMarathon from "@/components/RunningMarathon/RunningMarathon";
 
 export default function App() {
   const [currentGame, setCurrentGame] = useState("menu");
@@ -17,7 +17,7 @@ export default function App() {
       )}
 
       {currentGame === "mountain-climb" && (
-        <MountainClimb onBack={() => setCurrentGame("menu")} />
+        <RunningMarathon onBack={() => setCurrentGame("menu")} />
       )}
     </div>
   );
