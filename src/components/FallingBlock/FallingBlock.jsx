@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import profile from "@/assets/images/Profile.jpg";
 
 const GAME_WIDTH = 600;
 const GAME_HEIGHT = 700;
@@ -105,6 +106,21 @@ export default function FallingBlocks({ onBack }) {
           will-change: transform;
         }
         .paused { animation-play-state: paused; }
+
+        @keyframes bounce-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-bounce-slow {
+  animation: bounce-slow 3s infinite ease-in-out;
+}
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
       `}</style>
 
       {/* Hidden Input for handling Myanmar Unicode properly */}
@@ -171,9 +187,31 @@ export default function FallingBlocks({ onBack }) {
 
       {/* Modals */}
       {gameState !== "PLAY" && (
-        <div className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center backdrop-blur-md">
-          <div className="text-center p-12 bg-zinc-900 border border-white/10 rounded-[3rem] shadow-2xl w-[450px]">
-            <h1 className="text-5xl font-black mb-8 italic text-blue-500 uppercase">
+        <div className="fixed inset-0 bg-black/95 z-100 flex items-center justify-center backdrop-blur-xl transition-all duration-500">
+          <div className="relative group text-center p-10 bg-zinc-900/80 border border-white/10 rounded-[3.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-112.5 overflow-hidden">
+            {/* Background Decor Animation (လှလှလေးဖြစ်အောင်) */}
+            <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/10 rounded-full blur-3xl group-hover:bg-blue-600/20 transition-all duration-700"></div>
+
+            {/* --- Profile Section --- */}
+            <div className="relative mb-8 flex flex-col items-center">
+              <div className="w-28 h-28 rounded-full p-1 bg-linear-to-tr from-blue-600 to-cyan-400 shadow-lg mb-4 animate-bounce-slow">
+                {/* Image နေရာမှာ ဆရာကြီးရဲ့ ပုံ link ထည့်ပါ */}
+                <img
+                  src={profile}
+                  alt="Profile"
+                  className="w-full h-full rounded-full object-cover border-2 border-zinc-900"
+                />
+              </div>
+              <h2 className="text-2xl font-black text-white tracking-tight">
+                Oakkar Nyunt
+              </h2>
+              <p className="text-blue-400 text-xs font-medium opacity-80">
+                oakkarnyunt@gmail.com
+              </p>
+            </div>
+            {/* ----------------------- */}
+
+            <h1 className="text-5xl font-black mb-8 italic text-blue-500 uppercase tracking-tighter drop-shadow-lg">
               {gameState === "PAUSE"
                 ? "Paused"
                 : gameState === "GAMEOVER"
@@ -182,13 +220,13 @@ export default function FallingBlocks({ onBack }) {
             </h1>
 
             {gameState === "START" && (
-              <div className="flex flex-col gap-6 mb-10 text-white">
-                <div className="flex bg-zinc-800 p-1 rounded-xl">
+              <div className="flex flex-col gap-6 mb-10 text-white animate-fade-in">
+                <div className="flex bg-zinc-800/50 p-1.5 rounded-2xl border border-white/5">
                   {["english", "myanmar"].map((l) => (
                     <button
                       key={l}
                       onClick={() => setLanguage(l)}
-                      className={`flex-1 py-2 rounded-lg font-bold capitalize ${language === l ? "bg-blue-600 text-white shadow-lg" : "text-zinc-500"}`}
+                      className={`flex-1 py-2.5 rounded-xl font-bold capitalize transition-all duration-300 ${language === l ? "bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]" : "text-zinc-500 hover:text-zinc-300"}`}
                     >
                       {l}
                     </button>
@@ -199,7 +237,7 @@ export default function FallingBlocks({ onBack }) {
                     <button
                       key={lvl}
                       onClick={() => setDiffLevel(lvl)}
-                      className={`flex-1 py-2 rounded-xl border-2 font-black text-[10px] ${diffLevel === lvl ? "border-blue-500 bg-blue-500/10 text-blue-400" : "border-zinc-700 text-zinc-600"}`}
+                      className={`flex-1 py-2 rounded-xl border-2 font-black text-[10px] transition-all duration-300 ${diffLevel === lvl ? "border-blue-500 bg-blue-500/10 text-blue-400" : "border-zinc-700 text-zinc-600 hover:border-zinc-500"}`}
                     >
                       {lvl}
                     </button>
@@ -208,7 +246,7 @@ export default function FallingBlocks({ onBack }) {
               </div>
             )}
 
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 relative z-10">
               <button
                 onClick={() => {
                   if (gameState === "START" || gameState === "GAMEOVER") {
@@ -220,18 +258,18 @@ export default function FallingBlocks({ onBack }) {
                   }
                   setGameState("PLAY");
                 }}
-                className="w-full py-5 bg-blue-600 rounded-2xl text-2xl font-black hover:bg-blue-500 transition-all uppercase"
+                className="w-full py-5 bg-blue-600 rounded-3xl text-2xl font-black hover:bg-blue-500 shadow-[0_10px_20px_rgba(37,99,235,0.3)] active:scale-95 transition-all uppercase"
               >
-                {gameState === "PAUSE" ? "Continue" : "Start"}
+                {gameState === "PAUSE" ? "Continue" : "Start Game"}
               </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onBack();
                 }}
-                className="text-zinc-600 font-bold uppercase text-xs tracking-widest mt-2"
+                className="text-zinc-500 font-bold uppercase text-xs tracking-[0.2em] mt-2 hover:text-zinc-300 transition-colors"
               >
-                Main Menu
+                Back to Menu
               </button>
             </div>
           </div>
