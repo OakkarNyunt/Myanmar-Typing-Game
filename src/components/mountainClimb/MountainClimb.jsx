@@ -57,43 +57,53 @@ export default function SprintMarathon({ onBack }) {
   // Keyboard Interaction
   useEffect(() => {
     const handleKey = (e) => {
-      if (gameState === "PAUSE") {
-        // Pause လုပ်ထားရင် Escape နှိပ်ရင် Resume ပြန်လုပ်မယ်
-        if (e.key === "Escape") setGameState("PLAY");
-        return;
-      }
       if (gameState !== "PLAY") return;
 
+      // ၁။ Escape keys စသည်တို့ကို ဖယ်ထုတ်ထားရန်
       if (e.key === "Escape") {
-        // PLAY mode မှာ Escape နှိပ်ရင် Pause လုပ်မယ်
         setGameState("PAUSE");
         return;
       }
 
+      // ၂။ Backspace - အမှားရှိနေရင် ဖျက်နိုင်အောင်
       if (e.key === "Backspace") {
         setTyped((prev) => prev.slice(0, -1));
         setIsError(false);
         return;
       }
-      if (e.key.length !== 1) return;
 
-      if (e.key === word[typed.length]) {
-        const nextTyped = typed + e.key;
-        setTyped(nextTyped);
-        setIsError(false);
-        if (nextTyped === word) {
-          setPlayerX((prev) => prev + 250);
-          setWord(getNextWord(level.dbKey));
-          setTyped("");
+      // ၃။ အမှားရှိနေရင် (isError === true) စာလုံးအသစ် ထပ်ရိုက်ခွင့်မပေးပါ (ဒီမှာတင် ရပ်ထားမယ်)
+      if (isError) return;
+
+      // ၄။ Character ရိုက်နှိပ်ခြင်းကို စစ်ဆေးခြင်း
+      if (e.key.length === 1) {
+        const nextCharIndex = typed.length;
+        const expectedChar = word[nextCharIndex];
+
+        if (e.key === expectedChar) {
+          // မှန်ရင် ရှေ့ဆက်မယ်
+          const newTyped = typed + e.key;
+          setTyped(newTyped);
+          setIsError(false);
+
+          // စာလုံးအကုန်ရိုက်ပြီးကြောင်း စစ်ဆေးခြင်း
+          if (newTyped === word) {
+            setTimeout(() => {
+              setPlayerX((prev) => prev + 250);
+              setWord(getNextWord(level.dbKey));
+              setTyped("");
+            }, 50); // စာလုံးအရောင်ပြောင်းတာ မြင်သာအောင် ခေတ္တစောင့်ပေးခြင်း
+          }
+        } else {
+          // မှားရင် error ပြမယ်၊ logic ကို ဒီမှာတင် ဖြတ်ချလိုက်မယ် (ဒါကြောင့် နောက်တစ်လုံး ရိုက်မရတော့ဘူး)
+          setIsError(true);
         }
-      } else {
-        setIsError(true);
       }
     };
+
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [gameState, word, typed, level, getNextWord]);
-
+  }, [gameState, word, typed, level, isError, getNextWord]);
   // Game Logic & Result Sounds
   useEffect(() => {
     let interval;
@@ -153,7 +163,7 @@ export default function SprintMarathon({ onBack }) {
         <div className="flex items-center gap-3">
           <button
             onClick={handleExit}
-            className="px-6 py-2 bg-zinc-800 hover:bg-red-700 rounded-xl font-bold transition-colors"
+            className="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-xl font-bold transition-colors"
           >
             EXIT
           </button>
@@ -162,7 +172,7 @@ export default function SprintMarathon({ onBack }) {
           {gameState === "PLAY" && (
             <button
               onClick={() => setGameState("PAUSE")}
-              className="px-5 py-2 rounded-xl font-black bg-amber-500 hover:bg-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.4)] transition-all flex items-center gap-2"
+              className="px-5 py-2 rounded-xl font-black bg-red-500 hover:bg-red-600  transition-all flex items-center gap-2"
             >
               <span className="text-xl">⏸️</span> PAUSE
             </button>
@@ -200,7 +210,7 @@ export default function SprintMarathon({ onBack }) {
         </motion.div>
 
         {/* PLAYER CHARACTER & WORD BUBBLE */}
-        <div className="absolute left-[250px] z-30 flex flex-col items-center">
+        <div className="absolute left-62.5 z-30 flex flex-col items-center">
           <AnimatePresence mode="wait">
             {gameState === "PLAY" && (
               <motion.div
@@ -211,20 +221,23 @@ export default function SprintMarathon({ onBack }) {
                 className="mb-8 bg-white/95 backdrop-blur px-6 py-3 rounded-2xl shadow-2xl border-b-4 border-zinc-300 min-w-max relative"
               >
                 <div className="text-3xl font-black text-zinc-900 tracking-tight">
-                  {word.split("").map((c, i) => (
-                    <span
-                      key={i}
-                      className={
-                        i < typed.length
-                          ? "text-emerald-600"
-                          : i === typed.length && isError
-                            ? "text-red-600 animate-pulse"
-                            : "text-zinc-300"
-                      }
-                    >
-                      {c}
-                    </span>
-                  ))}
+                  {word.split("").map((c, i) => {
+                    let charClass = "text-zinc-300"; // default (မရိုက်ရသေး)
+
+                    if (i < typed.length) {
+                      charClass = "text-emerald-600"; // ရိုက်ပြီးသား (မှန်တယ်)
+                    } else if (i === typed.length && isError) {
+                      charClass = "text-red-600 animate-pulse"; // လက်ရှိရိုက်ရမယ့်နေရာမှာ မှားနေရင်
+                    } else if (i === typed.length) {
+                      charClass = "text-blue-500 underline"; // လက်ရှိရိုက်ရမယ့်နေရာ (အမှားမရှိသေးရင်)
+                    }
+
+                    return (
+                      <span key={i} className={charClass}>
+                        {c === " " ? "\u00A0" : c}
+                      </span>
+                    );
+                  })}
                 </div>
                 <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white/95 rotate-45" />
               </motion.div>
@@ -257,7 +270,7 @@ export default function SprintMarathon({ onBack }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-xl flex items-center justify-center p-4"
+            className="fixed inset-0 z-110 bg-black/60 backdrop-blur-xl flex items-center justify-center p-4"
           >
             {/* Main Glass Modal */}
             <motion.div
@@ -271,14 +284,14 @@ export default function SprintMarathon({ onBack }) {
 
               {/* Logo Section */}
               <div className="relative mb-10">
-                <h2 className="text-5xl font-black italic bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent uppercase tracking-tighter">
+                <h2 className="text-5xl font-black italic bg-linear-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent uppercase tracking-tighter">
                   CYBER SPRINT
                 </h2>
                 <div className="h-1 w-20 bg-blue-500 mx-auto mt-2 rounded-full shadow-[0_0_10px_#3b82f6]" />
               </div>
 
               {/* Developer Profile Card */}
-              <div className="bg-white/5 border border-white/5 rounded-[2rem] p-6 mb-10 relative group">
+              <div className="bg-white/5 border border-white/5 rounded-4xl p-6 mb-10 relative group">
                 <div className="relative w-24 h-24 mx-auto mb-4">
                   {/* Profile Image Border Animation */}
                   <motion.div
@@ -302,18 +315,15 @@ export default function SprintMarathon({ onBack }) {
                 </div>
 
                 <h3 className="text-2xl font-bold text-white tracking-tight">
-                  Your Name
+                  Oakkar Nyunt
                 </h3>
                 <p className="text-blue-400 font-medium text-sm">
-                  developer@email.com
+                  oakkarnyunt@gmail.com
                 </p>
 
                 <div className="mt-4 flex justify-center gap-3">
-                  <span className="px-3 py-1 bg-blue-500/10 rounded-full text-[10px] text-blue-300 border border-blue-500/20 uppercase font-bold tracking-widest">
-                    Lead Developer
-                  </span>
                   <span className="px-3 py-1 bg-emerald-500/10 rounded-full text-[10px] text-emerald-300 border border-emerald-500/20 uppercase font-bold tracking-widest">
-                    UI Designer
+                    Passionate software developer
                   </span>
                 </div>
               </div>
@@ -353,7 +363,7 @@ export default function SprintMarathon({ onBack }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-zinc-950/95 backdrop-blur-xl flex items-center justify-center p-6"
+            className="fixed inset-0 z-100 bg-zinc-950/95 backdrop-blur-xl flex items-center justify-center p-6"
           >
             <div className="bg-zinc-900 p-12 rounded-[3rem] text-center border border-zinc-800 shadow-2xl">
               <h1 className="text-7xl font-black mb-10 italic text-blue-500 uppercase tracking-tighter">
@@ -363,34 +373,96 @@ export default function SprintMarathon({ onBack }) {
                     ? "Victory!"
                     : "Defeat!"}
               </h1>
-              {gameState === "START" ? (
-                <div className="grid grid-cols-1 gap-4">
-                  {Object.entries(LEVELS).map(([k, v]) => (
-                    <button
-                      key={k}
-                      onClick={() => initRace(v)}
-                      className="p-5 bg-zinc-800 rounded-2xl font-black text-xl hover:bg-blue-600 transition-all uppercase"
-                    >
-                      {v.label}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  <button
-                    onClick={() => initRace()}
-                    className="py-6 px-16 bg-blue-600 rounded-2xl font-black text-3xl shadow-lg hover:bg-blue-500"
+              <AnimatePresence>
+                {(gameState === "START" ||
+                  gameState === "WIN" ||
+                  gameState === "LOSE") && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-100 bg-zinc-950/95 backdrop-blur-xl flex items-center justify-center p-6"
                   >
-                    TRY AGAIN
-                  </button>
-                  <button
-                    onClick={() => setGameState("START")}
-                    className="py-4 text-zinc-500 font-bold uppercase hover:text-white transition-colors"
-                  >
-                    Main Menu
-                  </button>
-                </div>
-              )}
+                    <div className="bg-zinc-900 p-12 rounded-[3.5rem] text-center border border-zinc-800 shadow-2xl max-w-lg w-full relative overflow-hidden">
+                      {/* Background Glow Deco */}
+                      <div
+                        className={`absolute -top-24 -left-24 w-48 h-48 blur-[100px] rounded-full ${gameState === "WIN" ? "bg-emerald-500/20" : "bg-red-500/20"}`}
+                      />
+
+                      <h1
+                        className={`text-7xl font-black mb-4 italic uppercase tracking-tighter ${gameState === "WIN" ? "text-emerald-500" : gameState === "LOSE" ? "text-red-500" : "text-blue-500"}`}
+                      >
+                        {gameState === "START"
+                          ? "Cyber Sprint"
+                          : gameState === "WIN"
+                            ? "Victory!"
+                            : "Defeat!"}
+                      </h1>
+
+                      {/* Developer Info Card (WIN/LOSE မှာ ပေါ်လာမည်) */}
+                      {(gameState === "WIN" || gameState === "LOSE") && (
+                        <motion.div
+                          initial={{ y: 20, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ delay: 0.2 }}
+                          className="mb-10 mt-6 p-4 bg-white/5 rounded-3xl border border-white/5 flex items-center gap-4 text-left"
+                        >
+                          <img
+                            src={profile}
+                            alt="Developer"
+                            className="w-30 h-30 rounded-2xl border-2 border-zinc-700 object-cover"
+                            onError={(e) => {
+                              e.target.src =
+                                "https://ui-avatars.com/api/?name=Dev&background=random";
+                            }}
+                          />
+                          <div>
+                            <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">
+                              Game Developed By
+                            </p>
+                            <h3 className="text-xl font-bold text-white tracking-tight">
+                              Oakkar Nyunt
+                            </h3>
+                            <p className="text-zinc-400 text-xs">
+                              oakkarnyunt@gmail.com
+                            </p>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Buttons Section */}
+                      {gameState === "START" ? (
+                        <div className="grid grid-cols-1 gap-4 mt-6">
+                          {Object.entries(LEVELS).map(([k, v]) => (
+                            <button
+                              key={k}
+                              onClick={() => initRace(v)}
+                              className="p-5 bg-zinc-800 rounded-2xl font-black text-xl hover:bg-blue-600 transition-all uppercase tracking-tight"
+                            >
+                              {v.label}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-4">
+                          <button
+                            onClick={() => initRace()}
+                            className={`py-6 px-16 rounded-2xl font-black text-3xl shadow-lg transition-transform active:scale-95 ${gameState === "WIN" ? "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/20" : "bg-blue-600 hover:bg-blue-500 shadow-blue-500/20"}`}
+                          >
+                            TRY AGAIN
+                          </button>
+                          <button
+                            onClick={() => setGameState("START")}
+                            className="py-4 text-zinc-500 font-bold uppercase hover:text-white transition-colors tracking-widest text-sm"
+                          >
+                            Back to Main Menu
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
         )}

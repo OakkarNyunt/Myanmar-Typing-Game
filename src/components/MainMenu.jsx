@@ -16,7 +16,7 @@ export default function MainMenu({ onSelectGame }) {
     },
     {
       id: "mountain-climb",
-      title: "Mountain Climb",
+      title: "Running Marathon",
       desc: "Computer AI ကို အမြန်နှုန်းနဲ့ ယှဉ်ပြိုင်ပါ",
       icon: "⛰️",
       color: "from-emerald-400 to-teal-600",
