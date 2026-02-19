@@ -55,7 +55,7 @@ export default function BirdShootingGame({ onBack }) {
   const [birds, setBirds] = useState([]);
   const [userInput, setUserInput] = useState("");
   const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(5);
+  const [lives, setLives] = useState(7);
   const [speedMultiplier, setSpeedMultiplier] = useState(0.5);
   const [gameWords, setGameWords] = useState([]);
   const [wordIndex, setWordIndex] = useState(0);
@@ -94,7 +94,7 @@ export default function BirdShootingGame({ onBack }) {
     setBirds([]);
     setUserInput("");
     setScore(0);
-    setLives(5);
+    setLives(7);
     setSpeedMultiplier(0.5); // Level ကို မူလ 0.5 ဆီ ပြန်ပို့မယ်
     setWordIndex(0); // စာလုံးအညွှန်းကိုလည်း Reset လုပ်မယ်
     setIsPaused(false);
@@ -108,7 +108,7 @@ export default function BirdShootingGame({ onBack }) {
     setGameWords(shuffledWords);
     setWordIndex(0);
     setScore(0);
-    setLives(5);
+    setLives(7);
     setSpeedMultiplier(0.5);
     setBirds([]);
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import profile from "@/assets/images/Profile.jpg";
 
-const GAME_WIDTH = 600;
+const GAME_WIDTH = 800;
 const GAME_HEIGHT = 700;
 
 export default function FallingBlocks({ onBack }) {
@@ -10,14 +10,16 @@ export default function FallingBlocks({ onBack }) {
   const [fallingWords, setFallingWords] = useState([]);
   const [typed, setTyped] = useState("");
   const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(5);
+  const [lives, setLives] = useState(7);
   const [language, setLanguage] = useState("english");
   const [diffLevel, setDiffLevel] = useState("EASY");
 
   const inputRef = useRef(null); // မြန်မာစာ မှန်ကန်ဖို့အတွက် input ref
   const sounds = useRef({
-    type: new Audio("./sounds/typingsound.mp3"),
-    gameOver: new Audio("./sounds/lose.wav"),
+    // စာလုံးမှန်လို့ ကြေမွသွားတဲ့အခါ ထွက်မယ့်အသံ
+    correct: new Audio("/sounds/crash.mp3"),
+    // Game over ဖြစ်တဲ့အခါ ထွက်မယ့်အသံ
+    gameOver: new Audio("/sounds/lose.wav"),
   });
 
   const spawnWord = useCallback(() => {
@@ -52,24 +54,33 @@ export default function FallingBlocks({ onBack }) {
     const currentInput = e.target.value;
     setTyped(currentInput);
 
-    // စကားလုံး အပြည့်အစုံ ကိုက်ညီမှု ရှိမရှိ စစ်ဆေးခြင်း
-    const matchIdx = fallingWords.findIndex((w) => w.text === currentInput);
-    if (matchIdx !== -1) {
-      sounds.current.type.currentTime = 0;
-      sounds.current.type.play().catch(() => {});
+    const matchIdx = fallingWords.findIndex(
+      (w) => w.text === currentInput && !w.shattering,
+    );
 
-      setFallingWords((prev) => prev.filter((_, i) => i !== matchIdx));
+    if (matchIdx !== -1) {
+      // --- အသံထည့်သည့်အပိုင်း ---
+      const sound = sounds.current.correct;
+      sound.currentTime = 0; // အသံကို အစကပြန်စစေရန် (ထစ်မသွားစေရန်)
+      sound.play().catch(() => {}); // Browser Error မတက်အောင် catch ထည့်ထားသည်
+      // ----------------------
+
+      // မှန်သွားတဲ့ word ကို shatter effect အရင်ပြမယ်
+      setFallingWords((prev) =>
+        prev.map((w, i) => (i === matchIdx ? { ...w, shattering: true } : w)),
+      );
+
       setScore((s) => s + 10);
       setTyped("");
-      if (inputRef.current) inputRef.current.value = ""; // မှန်သွားရင် input ကို ရှင်းပစ်မယ်
+      if (inputRef.current) inputRef.current.value = "";
+
+      // ၀.၃ စက္ကန့် (animation ပြီးရင်) မှ array ထဲက အပြီးဖယ်မယ်
+      setTimeout(() => {
+        setFallingWords((prev) => prev.filter((w) => !w.shattering));
+      }, 300);
     } else {
-      // ရိုက်နေတဲ့ စာလုံးက ကျနေတဲ့ block တွေထဲမှာ လုံးဝ မရှိတော့ရင် Reset လုပ်မယ်
-      const potentialMatch = fallingWords.some((w) =>
-        w.text.startsWith(currentInput),
-      );
-      if (!potentialMatch && currentInput.length > 0) {
-        // မြန်မာစာအတွက် သဝေထိုး ကိစ္စကြောင့် နောက်ဆုံး တစ်လုံးကိုပဲ စစ်တာမျိုး မလုပ်ဘဲ
-        // ပိုပြီး flexible ဖြစ်အောင် ထားပေးထားပါတယ်
+      if (!fallingWords.some((w) => w.text.startsWith(currentInput))) {
+        // optional: မှားရင် ဘာလုပ်မလဲ ထည့်နိုင်သည်
       }
     }
   };
@@ -80,8 +91,17 @@ export default function FallingBlocks({ onBack }) {
       spawner = setInterval(spawnWord, 2000);
       if (inputRef.current) inputRef.current.focus(); // Play လုပ်တာနဲ့ Input ကို focus ပေးမယ်
     }
+
     return () => clearInterval(spawner);
   }, [gameState, spawnWord]);
+
+  useEffect(() => {
+    if (gameState === "GAMEOVER") {
+      const sound = sounds.current.gameOver;
+      sound.currentTime = 0;
+      sound.play().catch(() => {});
+    }
+  }, [gameState]);
 
   useEffect(() => {
     fetch("./data/wordsForFallingBlock.json")
@@ -121,6 +141,15 @@ export default function FallingBlocks({ onBack }) {
 .animate-fade-in {
   animation: fade-in 0.5s ease-out forwards;
 }
+  @keyframes shatter {
+  0% { transform: scale(1); opacity: 1; filter: blur(0); }
+  100% { transform: scale(1.5) rotate(15deg); opacity: 0; filter: blur(10px); }
+}
+
+.shatter-effect {
+  animation: shatter 0.3s ease-out forwards !important;
+  pointer-events: none;
+}
       `}</style>
 
       {/* Hidden Input for handling Myanmar Unicode properly */}
@@ -156,28 +185,51 @@ export default function FallingBlocks({ onBack }) {
         {fallingWords.map((word) => (
           <div
             key={word.id}
-            onAnimationEnd={() => handleAnimationEnd(word.id)}
+            onAnimationEnd={() =>
+              !word.shattering && handleAnimationEnd(word.id)
+            }
             style={{
               left: `${word.x}px`,
-              animationDuration: `${word.duration}s`,
+              animationDuration: word.shattering ? "0s" : `${word.duration}s`,
+              borderRadius: "60% 40% 30% 70% / 60% 30% 70% 40%",
+              background:
+                "radial-gradient(circle at 30% 30%, #e2e8f0, #475569)",
+              willChange: "transform",
             }}
-            className={`falling-block absolute px-5 py-2 bg-white rounded-2xl shadow-xl flex items-center justify-center ${gameState === "PAUSE" ? "paused" : ""}`}
+            className={`falling-block absolute px-6 py-3 shadow-xl flex items-center justify-center border-2 border-slate-700/50 
+      ${gameState === "PAUSE" ? "paused" : ""} 
+      ${word.shattering ? "shatter-effect" : ""}`}
           >
-            <span
-              className="text-2xl font-black text-zinc-900 tracking-tight"
-              style={{ fontFamily: "Pyidaungsu, sans-serif" }}
-            >
-              {word.text}
-              {/* Highlight logic: မြန်မာစာအတွက် split မလုပ်ဘဲ input ထဲမှာ ပါသလားပဲ စစ်ပါမယ် */}
-              {typed && word.text.startsWith(typed) && (
-                <span className="absolute inset-0 px-5 py-2 text-blue-600 overflow-hidden whitespace-nowrap">
-                  {typed}
+            {/* Grid ကိုသုံးပြီး စာသားနှစ်ခုကို တစ်နေရာတည်းမှာ ထပ်ထားခြင်း */}
+            <div className="grid">
+              {/* အောက်ခံ စာသား (Base Layer) */}
+              <span
+                className="col-start-1 row-start-1 text-2xl font-black text-zinc-900 tracking-tight whitespace-nowrap"
+                style={{
+                  fontFamily: "Pyidaungsu, sans-serif",
+                  visibility: "visible",
+                }}
+              >
+                {word.text}
+              </span>
+
+              {/* အပေါ်က Highlight (Overlay Layer) */}
+              {typed && word.text.startsWith(typed) && !word.shattering && (
+                <span
+                  className="col-start-1 row-start-1 text-2xl font-black text-blue-600 tracking-tight whitespace-nowrap overflow-hidden transition-all duration-75"
+                  style={{
+                    fontFamily: "Pyidaungsu, sans-serif",
+                    width: "100%",
+                    // clipPath ကို logic ပြန်စစ်ထားပါတယ်
+                    clipPath: `inset(0 ${100 - (typed.length / word.text.length) * 100}% 0 0)`,
+                  }}
+                >
+                  {word.text}
                 </span>
               )}
-            </span>
+            </div>
           </div>
         ))}
-
         <div className="absolute bottom-10 w-full text-center">
           <span className="text-4xl font-black text-white/10 tracking-widest">
             {typed || "TYPE..."}
@@ -215,7 +267,7 @@ export default function FallingBlocks({ onBack }) {
               {gameState === "PAUSE"
                 ? "Paused"
                 : gameState === "GAMEOVER"
-                  ? "Defeated"
+                  ? "Game Over"
                   : "Falling Block"}
             </h1>
 
@@ -251,7 +303,7 @@ export default function FallingBlocks({ onBack }) {
                 onClick={() => {
                   if (gameState === "START" || gameState === "GAMEOVER") {
                     setFallingWords([]);
-                    setLives(5);
+                    setLives(7);
                     setScore(0);
                     setTyped("");
                     if (inputRef.current) inputRef.current.value = "";
