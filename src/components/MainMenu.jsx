@@ -15,20 +15,20 @@ export default function MainMenu({ onSelectGame }) {
       difficulty: "All Levels",
     },
     {
+      id: "falling-block",
+      title: "Falling Blocks",
+      desc: "အောက်ဆင်းလာတဲ့ စာလုံးတွေကို အမှန်တကယ် ရိုက်ထည့်ပြီး ကာကွယ်ပါ",
+      icon: "📦",
+      color: "from-purple-500 to-pink-500",
+      difficulty: "All Levels",
+    },
+    {
       id: "mountain-climb",
       title: "Running Marathon",
       desc: "Computer AI ကို အမြန်နှုန်းနဲ့ ယှဉ်ပြိုင်ပါ",
       icon: "⛰️",
       color: "from-emerald-400 to-teal-600",
       difficulty: "Pro Typing",
-    },
-    {
-      id: "falling-block",
-      title: "Falling Blocks",
-      desc: "အောက်ဆင်းလာတဲ့ စာလုံးတွေကို အမှန်တကယ် ရိုက်ထည့်ပြီး ကာကွယ်ပါ",
-      icon: "📦",
-      color: "from-purple-500 to-pink-500",
-      difficulty: "Hard",
     },
   ];
 
