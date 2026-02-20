@@ -234,31 +234,61 @@ export default function SprintMarathon({ onBack }) {
 
       {/* Arena */}
       <div className="flex-1 relative bg-slate-900 overflow-hidden flex flex-col justify-center">
-        <div className="absolute inset-0" style={{ perspective: "600px" }}>
-          <div
-            className="absolute inset-0 w-full h-[200%] origin-top"
+        {/* Track System - Performance optimized with will-change */}
+        <div
+          className="absolute inset-0 pointer-events-none overflow-hidden"
+          style={{ willChange: "transform" }}
+        >
+          {/* Moving Lane - ခြေထောက်နဲ့ ထပ်တူကျအောင် 70% မှာ ကပ်ထားပါတယ် */}
+          <motion.div
+            animate={
+              gameState === "PLAY"
+                ? {
+                    backgroundPositionX: ["0px", "-320px"], // ရှေ့ကို ပြေးနေတဲ့ feeling
+                    backgroundPositionY: ["-10px", "10px"], // ဘယ်ညာ တုန်ခါနေတဲ့ feeling
+                  }
+                : {}
+            }
+            transition={{
+              backgroundPositionX: {
+                repeat: Infinity,
+                duration: 1,
+                ease: "linear",
+              },
+              backgroundPositionY: {
+                repeat: Infinity,
+                duration: 0.5,
+                ease: "easeInOut",
+                repeatType: "mirror",
+              },
+            }}
+            className="absolute w-full"
             style={{
-              transform: "rotateX(60deg)",
-              backgroundImage: `linear-gradient(90deg, transparent 49%, white 50%, transparent 51%), linear-gradient(90deg, transparent 20%, rgba(255,255,255,0.05) 21%, transparent 22%)`,
-              backgroundSize: "100% 120px",
-              backgroundPosition: `0px ${playerX}px`,
-              backgroundColor: "#0f172a",
+              height: "4px",
+              top: "70%",
+              marginTop: "-3rem", // Runner ရဲ့ ခြေထောက် အနေအထားနဲ့ တိတိကျကျ ချိန်ညှိထားခြင်း
+              backgroundImage: `linear-gradient(90deg, #3b82f6 0%, #3b82f6 60%, transparent 60%)`,
+              backgroundSize: "160px 100%",
+              opacity: 0.8,
+              boxShadow: "0 0 15px rgba(59, 130, 246, 0.5)",
             }}
           />
         </div>
 
-        {/* Flag Pole */}
+        {/* Flag Pole - ပန်းတိုင်တိုင် */}
         <div
           className="absolute z-30"
           style={{
-            bottom: "35%",
+            bottom: "30%",
             left: "50%",
             transform: `translateX(${(level.dist - playerX) * 2}px)`,
           }}
         >
           <div className="flex flex-col items-center">
-            <div className="w-2 h-72 bg-zinc-400 rounded-full" />
-            <div className="absolute top-4 left-2 text-8xl">🏁</div>
+            <div className="w-2 h-72 bg-zinc-400 rounded-full shadow-[0_0_20px_rgba(0,0,0,0.5)]" />
+            <div className="absolute top-4 left-2 text-8xl drop-shadow-2xl">
+              🏁
+            </div>
           </div>
         </div>
 
@@ -266,19 +296,70 @@ export default function SprintMarathon({ onBack }) {
         <motion.div
           className="absolute z-10 left-1/2"
           style={{ bottom: "30%" }}
-          animate={{ x: aiX - playerX - 350 }}
+          animate={{
+            x: Math.max(-450, Math.min(150, aiX - playerX - 350)),
+            y: gameState === "PLAY" ? [0, 2, 0] : 0, // ဘယ်ညာရွေ့ရင် Character ပါ လိုက်တုန်အောင်
+          }}
+          transition={{
+            x: { type: "spring", stiffness: 40, damping: 15 },
+            y: { repeat: Infinity, duration: 0.5 },
+          }}
         >
-          <div className="flex flex-col items-center opacity-50">
-            <div className="text-[10rem] scale-x-[-1]">🏃‍♂️</div>
+          {/* ... (AI Bot UI content အရင်အတိုင်း) ... */}
+          <div className="flex flex-col items-center relative">
+            <div className="bg-orange-500 text-white text-[12px] font-black px-2 py-0.5 rounded-full -mb-2.5 z-10 shadow-lg uppercase">
+              AI
+            </div>
+            <motion.div
+              animate={gameState === "PLAY" ? { y: [0, -20, 0] } : {}}
+              transition={{ repeat: Infinity, duration: 0.45 }}
+              className="text-[10rem] scale-x-[-1] relative flex justify-center"
+              style={{ filter: "hue-rotate(260deg) saturate(1.5)" }}
+            >
+              🏃‍♂️
+            </motion.div>
+            {/* AI Runner ရဲ့ 🏃‍♂️ အောက်မှာ ထည့်ရန် */}
+            {gameState === "PLAY" && (
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none">
+                {[1, 2, 3].map((i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{
+                      scale: [0.8, 2, 0.5],
+                      opacity: [0, 1, 0],
+                      x: [0, -100], // <--- Positive ကနေ Negative (-150) ပြောင်းလိုက်တာပါ
+                      y: [0, -20],
+                    }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: 0.6,
+                      delay: i * 0.15,
+                      ease: "easeOut",
+                    }}
+                    className="absolute bottom-0 left-1/2 w-5 h-5 bg-orange-200/40 rounded-full blur-[5px]"
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </motion.div>
 
         {/* Player Runner */}
-        <div
+        <motion.div
           className="absolute left-1/2 -translate-x-1/2 z-20"
           style={{ bottom: "30%" }}
+          animate={
+            gameState === "PLAY"
+              ? {
+                  x: ["-50%", "-48%", "-52%", "-50%"], // ဘယ်ညာ တုန်ခါမှု ထည့်ထားပါတယ်
+                }
+              : {}
+          }
+          transition={{ repeat: Infinity, duration: 0.5, ease: "easeInOut" }}
         >
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center relative">
+            {/* Word Bubbles - (စာရိုက်တဲ့အပိုင်း အရင်အတိုင်းထားပါသည်) */}
             <AnimatePresence mode="wait">
               {gameState === "PLAY" && !isFinishing && (
                 <motion.div
@@ -286,48 +367,60 @@ export default function SprintMarathon({ onBack }) {
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
                   className="mb-8 flex flex-col items-center"
                 >
-                  <div className="bg-white/95 px-4 py-2 rounded-2xl border-2 border-indigo-400 shadow-sm relative min-w-27.5">
-                    <div className="text-lg font-black text-zinc-800 text-center tracking-tight">
+                  <div className="bg-white/95 px-4 py-2 rounded-2xl border-2 border-blue-500 shadow-xl relative min-w-27.5">
+                    <div className="text-lg font-black text-zinc-800 text-center">
                       {word}
                     </div>
-                    <div className="mt-1 h-8 bg-zinc-50 rounded-lg flex items-center justify-center px-3 border border-zinc-100">
+                    <div className="mt-1 h-7 bg-zinc-50 rounded-lg flex items-center justify-center px-3 border border-zinc-100">
                       <span
-                        className={`text-lg font-bold ${isError ? "text-red-500" : "text-indigo-600"}`}
+                        className={`text-lg font-bold ${isError ? "text-red-500" : "text-blue-600"}`}
                       >
                         {typed}
-                        <motion.span
-                          animate={{ opacity: [1, 0] }}
-                          transition={{ repeat: Infinity, duration: 0.6 }}
-                          className="inline-block w-[1.5px] h-3 bg-indigo-400 ml-0.5"
-                        />
                       </span>
                     </div>
-                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r-2 border-b-2 border-indigo-400 rotate-45" />
                   </div>
-                  {combo > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="absolute -right-6 top-0 text-[10px] font-black text-orange-500"
-                    >
-                      {combo}x
-                    </motion.div>
-                  )}
                 </motion.div>
               )}
             </AnimatePresence>
+
             <motion.div
-              animate={gameState === "PLAY" ? { y: [0, -20, 0] } : {}}
+              animate={gameState === "PLAY" ? { y: [0, -25, 0] } : {}}
               transition={{ repeat: Infinity, duration: 0.4 }}
-              className="text-[10rem] scale-x-[-1] drop-shadow-2xl"
+              className="text-[10rem] scale-x-[-1] drop-shadow-2xl relative flex justify-center"
             >
               🏃‍♂️
+              <div className=" scale-x-[-1] absolute top-5 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[14px] font-black px-2 py-0.5 rounded-full shadow-md">
+                Player
+              </div>
             </motion.div>
+            {/* Player Runner ရဲ့ 🏃‍♂️ အောက်မှာ ထည့်ရန် */}
+            {gameState === "PLAY" && (
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none">
+                {[1, 2, 3, 4].map((i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{
+                      scale: [0.8, 2, 0.5],
+                      opacity: [0, 1, 0],
+                      x: [0, -130], // <--- Positive ကနေ Negative (-150) ပြောင်းလိုက်တာပါ
+                      y: [0, -20],
+                    }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: 0.5,
+                      delay: i * 0.1,
+                      ease: "easeOut",
+                    }}
+                    className="absolute bottom-0 left-1/2 w-6 h-6 bg-blue-200/30 rounded-full blur-[6px]"
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Modals & Overlays (Pause, Start, Win, Lose) */}
