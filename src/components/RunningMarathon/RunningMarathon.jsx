@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
+import Profile from "@/assets/images/Profile.jpg";
 
 const LEVELS = {
   EASY: { aiSpeed: 1.2, dist: 15000, label: "EASY" },
@@ -230,25 +231,51 @@ export default function SprintMarathon({ onBack }) {
               {gameState === "PLAY" && !isFinishing && (
                 <motion.div
                   key={word}
-                  initial={{ opacity: 0, scale: 0.5, y: 20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 1.5, y: -100 }}
-                  className="mb-10 bg-white p-8 rounded-4xl border-4 border-blue-500 text-center shadow-2xl min-w-75"
+                  initial={{ opacity: 0, y: 5 }} // အောက်ကနေ အသာလေး တက်လာမယ်
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }} // Fade Out သက်သက်ပဲ သုံးထားပါတယ်
+                  transition={{ duration: 0.2 }} // ပိုမြန်မြန်နဲ့ ရှင်းရှင်းလင်းလင်း ပျောက်သွားအောင်ပါ
+                  className="mb-8 flex flex-col items-center"
                 >
-                  <div className="text-6xl font-black text-zinc-900 mb-4">
-                    {word}
+                  {/* Micro Speech Bubble */}
+                  <div className="bg-white/95 px-4 py-2 rounded-2xl border-2 border-indigo-400 shadow-sm relative min-w-27.5">
+                    {/* Word Display */}
+                    <div className="text-lg font-black text-zinc-800 text-center tracking-tight">
+                      {word}
+                    </div>
+
+                    {/* Slim Input Line */}
+                    <div className="mt-1 h-5 bg-zinc-50 rounded-lg flex items-center justify-center px-3 border border-zinc-100">
+                      <span
+                        className={`text-lg font-bold ${isError ? "text-red-500" : "text-indigo-600"}`}
+                      >
+                        {typed}
+                        <motion.span
+                          animate={{ opacity: [1, 0] }}
+                          transition={{ repeat: Infinity, duration: 0.6 }}
+                          className="inline-block w-[1.5px] h-3 bg-indigo-400 ml-0.5"
+                        />
+                      </span>
+                    </div>
+
+                    {/* Bubble Tail */}
+                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r-2 border-b-2 border-indigo-400 rotate-45" />
                   </div>
-                  <div className="h-14 bg-zinc-100 rounded-2xl flex items-center px-6 border-2 border-zinc-200">
-                    <span
-                      className={`text-3xl font-bold ${isError ? "text-red-500" : "text-blue-600"}`}
+
+                  {/* Mini Combo */}
+                  {combo > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="absolute -right-6 top-0 text-[10px] font-black text-orange-500"
                     >
-                      {typed}
-                      <span className="animate-ping">|</span>
-                    </span>
-                  </div>
+                      {combo}x
+                    </motion.div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
+
             <motion.div
               animate={gameState === "PLAY" ? { y: [0, -20, 0] } : {}}
               transition={{ repeat: Infinity, duration: 0.4 }}
@@ -259,6 +286,74 @@ export default function SprintMarathon({ onBack }) {
           </div>
         </div>
       </div>
+
+      {/* PAUSE MODAL */}
+      <AnimatePresence>
+        {gameState === "PAUSE" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-100 bg-zinc-950/80 backdrop-blur-md flex items-center justify-center p-6"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-zinc-900 border border-white/10 p-8 rounded-[3rem] text-center max-w-sm w-full shadow-[0_30px_60px_rgba(0,0,0,0.5)]"
+            >
+              <h2 className="text-zinc-500 font-bold tracking-[0.3em] text-xs mb-6 uppercase">
+                Game Paused
+              </h2>
+
+              {/* Developer Info Card */}
+              <div className="bg-zinc-800/50 p-6 rounded-[2.5rem] border border-white/5 mb-8">
+                <div className="relative inline-block mb-4">
+                  {/* Developer Image */}
+                  <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-blue-500 shadow-lg mx-auto bg-zinc-700">
+                    <img
+                      src={Profile}
+                      alt="Developer"
+                      className="w-full h-full object-cover"
+                      onError={(e) =>
+                        (e.target.src =
+                          "https://ui-avatars.com/api/?name=Dev&background=3b82f6&color=fff")
+                      }
+                    />
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 bg-green-500 w-6 h-6 rounded-full border-4 border-zinc-900" />
+                </div>
+
+                <h3 className="text-2xl font-black text-white mb-1">
+                  Oakkar Nyunt
+                </h3>
+                <p className="text-blue-400 text-sm font-medium mb-3">
+                  Lead Developer
+                </p>
+
+                <div className="text-zinc-400 text-sm font-mono bg-black/30 py-2 px-4 rounded-full inline-block border border-white/5">
+                  📧 oakkarnyunt@gmail.com
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <button
+                onClick={() => setGameState("PLAY")}
+                className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black text-lg transition-all active:scale-95 shadow-[0_10px_20px_rgba(59,130,246,0.3)]"
+              >
+                RESUME RACE
+              </button>
+
+              <button
+                onClick={onBack}
+                className="mt-4 text-zinc-500 text-sm font-bold hover:text-red-400 transition-colors"
+              >
+                Quit Game
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Menu Overlays */}
       <AnimatePresence>
