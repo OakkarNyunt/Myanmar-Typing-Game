@@ -71,11 +71,11 @@ export default function MainMenu({ onSelectGame }) {
             onClick={() => onSelectGame(game.id)}
           >
             <div
-              className={`absolute inset-0 bg-gradient-to-br ${game.color} rounded-[2rem] blur-xl opacity-10 group-hover:opacity-30 transition-opacity`}
+              className={`absolute inset-0 bg-linear-to-br ${game.color} rounded-4xl blur-xl opacity-10 group-hover:opacity-30 transition-opacity`}
             ></div>
 
             {/* Card Size ကို ကျစ်ကျစ်လျစ်လျစ် ဖြစ်အောင် p-6 လုပ်ထားပါတယ် */}
-            <div className="relative bg-slate-800/40 backdrop-blur-xl border border-white/5 p-6 rounded-[2rem] h-full flex flex-col border-b-4 border-black/20">
+            <div className="relative bg-slate-800/40 backdrop-blur-xl border p-6 rounded-4xl h-full flex flex-col border-b-4 border-black/20">
               <div className="flex justify-between items-start mb-4">
                 <span className="text-5xl group-hover:scale-110 transition-transform duration-300">
                   {game.icon}

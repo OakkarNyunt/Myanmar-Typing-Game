@@ -1,483 +1,356 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import profile from "@/assets/images/Profile.jpg";
+import { motion, AnimatePresence, useAnimation } from "framer-motion";
 
 const LEVELS = {
-  EASY: { aiSpeed: 1.2, dist: 3500, label: "EASY", dbKey: "EASY" },
-  MEDIUM: { aiSpeed: 2.0, dist: 5000, label: "MEDIUM", dbKey: "MEDIUM" },
-  HARD: { aiSpeed: 2.8, dist: 6500, label: "HARD", dbKey: "HARD" },
-  VERY_HARD: {
-    aiSpeed: 3.6,
-    dist: 8000,
-    label: "VERY HARD",
-    dbKey: "VERY_HARD",
-  },
+  EASY: { aiSpeed: 1.2, dist: 15000, label: "EASY" },
+  MEDIUM: { aiSpeed: 2.2, dist: 25000, label: "MEDIUM" },
+  HARD: { aiSpeed: 3.2, dist: 35000, label: "HARD" },
+  VERY_HARD: { aiSpeed: 4.2, dist: 45000, label: "VERY HARD" },
 };
 
 export default function SprintMarathon({ onBack }) {
   const [wordData, setWordData] = useState(null);
-  const [gameState, setGameState] = useState("START");
+  const [gameState, setGameState] = useState("START"); // START, LANG_SELECT, LEVEL_SELECT, PLAY, PAUSE, WIN, LOSE
+  const [selectedLang, setSelectedLang] = useState("ENGLISH");
   const [level, setLevel] = useState(LEVELS.EASY);
   const [playerX, setPlayerX] = useState(0);
   const [aiX, setAiX] = useState(0);
   const [word, setWord] = useState("");
   const [typed, setTyped] = useState("");
   const [isError, setIsError] = useState(false);
+  const [combo, setCombo] = useState(0);
+  const [isFinishing, setIsFinishing] = useState(false);
 
-  // Sound Refs
+  const screenControls = useAnimation();
   const sounds = useRef({
-    bg: new Audio("./sounds/bg_music.mp3"),
+    type: new Audio("./sounds/typingsound.mp3"),
+    wrong: new Audio("./sounds/wrongtype.wav"),
     win: new Audio("./sounds/gamee-win.wav"),
     lose: new Audio("./sounds/lose.wav"),
-    type: new Audio("./sounds/typingsound.mp3"), // စာရိုက်သံ
-    wrong: new Audio("./sounds/wrongtype.wav"), // အမှားသံ
   });
 
   useEffect(() => {
-    const bg = sounds.current.bg;
-    bg.loop = true;
-    bg.volume = 0.3;
-    if (gameState === "PLAY") bg.play().catch(() => {});
-    else bg.pause();
-  }, [gameState]);
-
-  const handleExit = () => {
-    sounds.current.bg.pause();
-    sounds.current.bg.currentTime = 0;
-    onBack();
-  };
+    fetch("./data/wordsForRunning.json")
+      .then((res) => res.json())
+      .then((data) => setWordData(data))
+      .catch((err) => console.error("JSON Load Error", err));
+  }, []);
 
   const getNextWord = useCallback(
-    (dbKey) => {
-      if (!wordData || !wordData[dbKey]) return "Loading...";
-      const list = wordData[dbKey];
+    (lang, lv) => {
+      if (!wordData?.[lang]?.[lv]) return "GO!";
+      const list = wordData[lang][lv];
       return list[Math.floor(Math.random() * list.length)];
     },
     [wordData],
   );
 
-  // Keyboard Interaction
-  useEffect(() => {
-    const handleKey = (e) => {
-      if (gameState !== "PLAY") return;
+  const initRace = (lvKey) => {
+    const lv = LEVELS[lvKey];
+    setLevel(lv);
+    setPlayerX(0);
+    setAiX(0);
+    setTyped("");
+    setCombo(0);
+    setIsError(false);
+    setIsFinishing(false);
+    setWord(getNextWord(selectedLang, lvKey));
+    setGameState("PLAY");
+  };
 
-      const s = sounds.current; // sounds ကို variable ပြန်ပေးရပါမယ်
-
-      // ၁။ PAUSE လုပ်ရန်
-      if (e.key === "Escape") {
-        setGameState("PAUSE");
-        return;
-      }
-
-      // ၂။ Backspace - အမှားရှိနေရင် ဖျက်နိုင်အောင်
-      if (e.key === "Backspace") {
-        setTyped((prev) => prev.slice(0, -1));
-        setIsError(false);
-        return;
-      }
-
-      // ၃။ အမှားရှိနေရင် ထပ်ရိုက်ခွင့်မပေးပါ
-      if (isError) return;
-
-      // ၄။ Character ရိုက်နှိပ်ခြင်းကို စစ်ဆေးခြင်း
-      if (e.key.length === 1) {
-        const nextCharIndex = typed.length;
-        const expectedChar = word[nextCharIndex];
-
-        if (e.key === expectedChar) {
-          // --- မှန်ရင် Typing အသံပေးမယ် ---
-          s.type.currentTime = 0;
-          s.type.play().catch(() => {});
-
-          const newTyped = typed + e.key;
-          setTyped(newTyped);
-          setIsError(false);
-
-          // စာလုံးအကုန်ရိုက်ပြီးကြောင်း စစ်ဆေးခြင်း
-          if (newTyped === word) {
-            setTimeout(() => {
-              setPlayerX((prev) => prev + 250);
-              setWord(getNextWord(level.dbKey));
-              setTyped("");
-            }, 50);
-          }
-        } else {
-          // --- မှားရင် Error အသံပေးမယ် ---
-          s.wrong.currentTime = 0;
-          s.wrong.play().catch(() => {});
-
-          setIsError(true);
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [gameState, word, typed, level, isError, getNextWord]);
-
-  // Game Logic & Result Sounds
+  // AI & Progress Logic
   useEffect(() => {
     let interval;
     if (gameState === "PLAY") {
       interval = setInterval(() => {
         setAiX((prev) => {
-          const nextAi = prev + level.aiSpeed * 6;
-          if (nextAi >= level.dist) {
-            setGameState("LOSE");
-            sounds.current.bg.pause();
-            sounds.current.lose.currentTime = 0;
-            sounds.current.lose.play().catch(() => {});
-            return level.dist;
-          }
-          return nextAi;
+          const gap = playerX - prev;
+          let boost =
+            gap > 800
+              ? level.aiSpeed * 1.5
+              : gap < -300
+                ? -level.aiSpeed * 0.5
+                : 0;
+          return prev + (level.aiSpeed + boost) * 5;
         });
-      }, 100);
-    }
-    if (playerX >= level.dist && gameState === "PLAY") {
-      setGameState("WIN");
-      const bg = sounds.current.bg;
-      bg.pause();
-      bg.currentTime = 0;
-      const winSfx = sounds.current.win;
-      winSfx.currentTime = 0;
-      winSfx.play().catch(() => {});
+      }, 50);
     }
     return () => clearInterval(interval);
-  }, [gameState, playerX, level]);
+  }, [gameState, level.aiSpeed, playerX]);
 
+  // Victory Logic
   useEffect(() => {
-    setGameState("LOADING");
-    fetch("./data/wordsForRunning.json")
-      .then((res) => res.json())
-      .then((data) => {
-        setWordData(data);
-        setGameState("START");
-      })
-      .catch(() => setGameState("START"));
-  }, []);
+    if (gameState === "PLAY") {
+      if (!isFinishing && playerX >= level.dist - 1000) setIsFinishing(true);
+      if (playerX >= level.dist) {
+        setGameState("WIN");
+        sounds.current.win.play().catch(() => {});
+      }
+      if (aiX >= level.dist && !isFinishing) {
+        setGameState("LOSE");
+        sounds.current.lose.play().catch(() => {});
+      }
+      if (isFinishing) {
+        const t = setTimeout(() => setPlayerX((p) => p + 25), 20);
+        return () => clearTimeout(t);
+      }
+    }
+  }, [playerX, aiX, level.dist, gameState, isFinishing]);
 
-  const initRace = (lv) => {
-    const sel = lv || level;
-    setLevel(sel);
-    setPlayerX(0);
-    setAiX(0);
-    setTyped("");
-    setIsError(false);
-    setWord(getNextWord(sel.dbKey));
-    setGameState("PLAY");
-  };
+  // Multi-lang Typing (Space/Enter to submit)
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (gameState !== "PLAY" || isFinishing) return;
+
+      if (e.key === "Backspace") {
+        setTyped((p) => p.slice(0, -1));
+        setIsError(false);
+        return;
+      }
+
+      if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        if (typed.trim() === word) {
+          setPlayerX((p) => p + 800);
+          setCombo((c) => c + 1);
+          setTyped("");
+          setWord(getNextWord(selectedLang, level.label.replace(" ", "_")));
+          setIsError(false);
+          sounds.current.type.currentTime = 0;
+          sounds.current.type.play().catch(() => {});
+        } else {
+          setIsError(true);
+          setCombo(0);
+          sounds.current.wrong.play().catch(() => {});
+          screenControls.start({
+            x: [-10, 10, 0],
+            transition: { duration: 0.1 },
+          });
+        }
+        return;
+      }
+
+      if (e.key.length === 1) setTyped((p) => p + e.key);
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [
+    gameState,
+    word,
+    typed,
+    selectedLang,
+    level,
+    isFinishing,
+    getNextWord,
+    screenControls,
+  ]);
 
   return (
-    <div className="fixed inset-0 bg-zinc-950 flex flex-col overflow-hidden text-white select-none">
+    <motion.div
+      animate={screenControls}
+      className="fixed inset-0 bg-zinc-950 text-white select-none overflow-hidden flex flex-col"
+    >
       {/* HUD Bar */}
-      <div className="p-6 bg-zinc-900 border-b-2 border-zinc-800 flex justify-between items-center z-50">
-        <div className="flex items-center gap-3">
+      <div className="h-20 bg-zinc-900 border-b border-white/10 flex items-center px-8 justify-between z-50">
+        <div className="flex gap-4">
           <button
-            onClick={handleExit}
-            className="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-xl font-bold transition-colors"
+            onClick={onBack}
+            className="px-4 py-2 bg-red-500/10 text-red-500 rounded-lg border border-red-500/20 font-bold"
           >
             EXIT
           </button>
+          <button
+            onClick={() =>
+              setGameState((s) => (s === "PLAY" ? "PAUSE" : "PLAY"))
+            }
+            className="px-6 py-2 bg-blue-600 rounded-lg font-black"
+          >
+            {gameState === "PAUSE" ? "▶️ RESUME" : "⏸️ PAUSE"}
+          </button>
+        </div>
+        <div className="flex-1 mx-10 h-3 bg-zinc-800 rounded-full overflow-hidden">
+          <motion.div
+            className="h-full bg-blue-500"
+            animate={{ width: `${(playerX / level.dist) * 100}%` }}
+          />
+        </div>
+        <div className="text-blue-500 font-black italic">
+          {selectedLang} - {level.label}
+        </div>
+      </div>
 
-          {/* PAUSE BUTTON (Play state မှာသာ ပြသမည်) */}
-          {gameState === "PLAY" && (
-            <button
-              onClick={() => setGameState("PAUSE")}
-              className="px-5 py-2 rounded-xl font-black bg-red-500 hover:bg-red-600  transition-all flex items-center gap-2"
-            >
-              <span className="text-xl">⏸️</span> PAUSE
-            </button>
-          )}
+      {/* Arena */}
+      <div className="flex-1 relative bg-slate-900 overflow-hidden flex flex-col justify-center">
+        {/* Perspective Road */}
+        <div className="absolute inset-0" style={{ perspective: "600px" }}>
+          <div
+            className="absolute inset-0 w-full h-[200%] origin-top"
+            style={{
+              transform: "rotateX(60deg)",
+              backgroundImage: `linear-gradient(90deg, transparent 49%, white 50%, transparent 51%), linear-gradient(90deg, transparent 20%, rgba(255,255,255,0.05) 21%, transparent 22%)`,
+              backgroundSize: "100% 120px",
+              backgroundPosition: `0px ${playerX}px`,
+              backgroundColor: "#0f172a",
+            }}
+          />
         </div>
 
-        <div className="flex-1 max-w-md px-10">
-          <div className="w-full h-4 bg-zinc-800 rounded-full overflow-hidden border border-zinc-700 relative shadow-inner">
-            <motion.div
-              className="absolute h-full bg-blue-500 shadow-[0_0_15px_#3b82f6]"
-              animate={{ width: `${(playerX / level.dist) * 100}%` }}
-            />
-            <motion.div
-              className="absolute h-full bg-red-600/40"
-              animate={{ width: `${(aiX / level.dist) * 100}%` }}
-            />
+        {/* Flag Pole */}
+        <div
+          className="absolute z-30"
+          style={{
+            bottom: "35%",
+            left: "50%",
+            transform: `translateX(${(level.dist - playerX) * 2}px)`,
+          }}
+        >
+          <div className="flex flex-col items-center">
+            <div className="w-2 h-72 bg-zinc-400 rounded-full" />
+            <div className="absolute top-4 left-2 text-8xl">🏁</div>
           </div>
         </div>
-        <div className="font-black italic text-zinc-500 uppercase tracking-widest">
-          {level.label}
-        </div>
-      </div>
 
-      <div className="flex-1 relative bg-zinc-900 flex flex-col justify-center">
-        {/* Track Design */}
-        <div className="absolute inset-x-0 h-96 bg-zinc-800/30 border-y-4 border-zinc-700/50" />
-
-        {/* AI ROBOT */}
+        {/* Player & AI */}
         <motion.div
-          className="absolute z-20"
-          animate={{ x: aiX - playerX + 200 }}
-          transition={{ type: "spring", stiffness: 50 }}
+          className="absolute z-10 left-1/2"
+          style={{ bottom: "30%" }}
+          animate={{ x: aiX - playerX - 350 }}
         >
-          <div className="text-9xl drop-shadow-2xl">🤖</div>
+          <div className="flex flex-col items-center opacity-50">
+            <div className="text-[10rem] scale-x-[-1]">🏃‍♂️</div>
+          </div>
         </motion.div>
 
-        {/* PLAYER CHARACTER & WORD BUBBLE */}
-        <div className="absolute left-62.5 z-30 flex flex-col items-center">
-          <AnimatePresence mode="wait">
-            {gameState === "PLAY" && (
-              <motion.div
-                key={word}
-                initial={{ opacity: 0, y: 20, scale: 0.8 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -20, scale: 0.8 }}
-                className="mb-8 bg-white/95 backdrop-blur px-6 py-3 rounded-2xl shadow-2xl border-b-4 border-zinc-300 min-w-max relative"
-              >
-                <div className="text-3xl font-black text-zinc-900 tracking-tight">
-                  {word.split("").map((c, i) => {
-                    let charClass = "text-zinc-300"; // default (မရိုက်ရသေး)
-
-                    if (i < typed.length) {
-                      charClass = "text-emerald-600"; // ရိုက်ပြီးသား (မှန်တယ်)
-                    } else if (i === typed.length && isError) {
-                      charClass = "text-red-600 animate-pulse"; // လက်ရှိရိုက်ရမယ့်နေရာမှာ မှားနေရင်
-                    } else if (i === typed.length) {
-                      charClass = "text-blue-500 underline"; // လက်ရှိရိုက်ရမယ့်နေရာ (အမှားမရှိသေးရင်)
-                    }
-
-                    return (
-                      <span key={i} className={charClass}>
-                        {c === " " ? "\u00A0" : c}
-                      </span>
-                    );
-                  })}
-                </div>
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white/95 rotate-45" />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* RUNNING ANIMATION PLAYER */}
-          <motion.div
-            animate={
-              gameState === "PLAY"
-                ? {
-                    y: [0, -25, 0],
-                    rotate: [-5, 5, -5],
-                    scaleY: [1, 0.9, 1],
-                  }
-                : {}
-            }
-            transition={{ repeat: Infinity, duration: 0.35, ease: "easeInOut" }}
-            className="text-8xl filter drop-shadow-[0_20px_30px_rgba(0,0,0,0.5)]"
-          >
-            🏃‍♂️
-          </motion.div>
+        <div
+          className="absolute left-1/2 -translate-x-1/2 z-20"
+          style={{ bottom: "30%" }}
+        >
+          <div className="flex flex-col items-center">
+            <AnimatePresence mode="wait">
+              {gameState === "PLAY" && !isFinishing && (
+                <motion.div
+                  key={word}
+                  initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 1.5, y: -100 }}
+                  className="mb-10 bg-white p-8 rounded-4xl border-4 border-blue-500 text-center shadow-2xl min-w-75"
+                >
+                  <div className="text-6xl font-black text-zinc-900 mb-4">
+                    {word}
+                  </div>
+                  <div className="h-14 bg-zinc-100 rounded-2xl flex items-center px-6 border-2 border-zinc-200">
+                    <span
+                      className={`text-3xl font-bold ${isError ? "text-red-500" : "text-blue-600"}`}
+                    >
+                      {typed}
+                      <span className="animate-ping">|</span>
+                    </span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <motion.div
+              animate={gameState === "PLAY" ? { y: [0, -20, 0] } : {}}
+              transition={{ repeat: Infinity, duration: 0.4 }}
+              className="text-[10rem] scale-x-[-1] drop-shadow-2xl"
+            >
+              🏃‍♂️
+            </motion.div>
+          </div>
         </div>
       </div>
 
-      {/* PAUSE MODAL OVERLAY */}
+      {/* Menu Overlays */}
       <AnimatePresence>
-        {gameState === "PAUSE" && (
+        {["START", "LANG_SELECT", "LEVEL_SELECT", "WIN", "LOSE"].includes(
+          gameState,
+        ) && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-110 bg-black/60 backdrop-blur-xl flex items-center justify-center p-4"
+            className="fixed inset-0 z-100 bg-black/95 flex items-center justify-center"
           >
-            {/* Main Glass Modal */}
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              className="relative bg-zinc-900/80 border border-white/10 backdrop-blur-md p-10 rounded-[3rem] text-center shadow-[0_0_50px_rgba(0,0,0,0.5)] max-w-lg w-full overflow-hidden"
-            >
-              {/* Background Decorative Glows */}
-              <div className="absolute -top-20 -left-20 w-40 h-40 bg-blue-500/20 blur-[80px]" />
-              <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-emerald-500/20 blur-[80px]" />
-
-              {/* Logo Section */}
-              <div className="relative mb-10">
-                <h2 className="text-5xl font-black italic bg-linear-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent uppercase tracking-tighter">
-                  CYBER SPRINT
-                </h2>
-                <div className="h-1 w-20 bg-blue-500 mx-auto mt-2 rounded-full shadow-[0_0_10px_#3b82f6]" />
-              </div>
-
-              {/* Developer Profile Card */}
-              <div className="bg-white/5 border border-white/5 rounded-4xl p-6 mb-10 relative group">
-                <div className="relative w-24 h-24 mx-auto mb-4">
-                  {/* Profile Image Border Animation */}
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{
-                      repeat: Infinity,
-                      duration: 8,
-                      ease: "linear",
-                    }}
-                    className="absolute inset-0 rounded-full border-2 border-dashed border-blue-500/50"
-                  />
-                  <img
-                    src={profile}
-                    alt="Developer"
-                    className="w-full h-full rounded-full object-cover p-2"
-                    onError={(e) => {
-                      e.target.src =
-                        "https://ui-avatars.com/api/?name=Dev&background=0D8ABC&color=fff";
-                    }}
-                  />
-                </div>
-
-                <h3 className="text-2xl font-bold text-white tracking-tight">
-                  Oakkar Nyunt
-                </h3>
-                <p className="text-blue-400 font-medium text-sm">
-                  oakkarnyunt@gmail.com
-                </p>
-
-                <div className="mt-4 flex justify-center gap-3">
-                  <span className="px-3 py-1 bg-emerald-500/10 rounded-full text-[10px] text-emerald-300 border border-emerald-500/20 uppercase font-bold tracking-widest">
-                    Passionate software developer
-                  </span>
-                </div>
-              </div>
-
-              {/* Big Animated Play Button */}
-              <div className="relative flex justify-center">
-                <motion.button
-                  onClick={() => setGameState("PLAY")}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="group relative flex items-center justify-center w-24 h-24 bg-blue-600 rounded-full shadow-[0_0_30px_rgba(59,130,246,0.6)]"
-                >
-                  {/* Pulse Rings */}
-                  <motion.div
-                    animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
-                    className="absolute inset-0 bg-blue-500 rounded-full"
-                  />
-                  <span className="relative text-3xl">▶️</span>
-                </motion.button>
-              </div>
-
-              <p className="mt-8 text-zinc-500 text-xs font-bold uppercase tracking-[0.2em]">
-                Click to Resume Race
-              </p>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* OVERLAYS (START/WIN/LOSE) - Your existing code for these overlays */}
-      <AnimatePresence>
-        {(gameState === "START" ||
-          gameState === "WIN" ||
-          gameState === "LOSE") && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-100 bg-zinc-950/95 backdrop-blur-xl flex items-center justify-center p-6"
-          >
-            <div className="bg-zinc-900 p-12 rounded-[3rem] text-center border border-zinc-800 shadow-2xl">
-              <h1 className="text-7xl font-black mb-10 italic text-blue-500 uppercase tracking-tighter">
-                {gameState === "START"
-                  ? "Cyber Sprint"
-                  : gameState === "WIN"
-                    ? "Victory!"
-                    : "Defeat!"}
-              </h1>
-              <AnimatePresence>
-                {(gameState === "START" ||
-                  gameState === "WIN" ||
-                  gameState === "LOSE") && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-100 bg-zinc-950/95 backdrop-blur-xl flex items-center justify-center p-6"
+            <div className="bg-zinc-900 p-12 rounded-[3rem] text-center border border-white/10 w-full max-w-md">
+              {gameState === "START" && (
+                <>
+                  <h1 className="text-5xl font-black mb-10 text-blue-500 italic">
+                    MARATHON
+                  </h1>
+                  <button
+                    onClick={() => setGameState("LANG_SELECT")}
+                    className="w-full py-5 bg-blue-600 rounded-2xl font-black text-xl"
                   >
-                    <div className="bg-zinc-900 p-12 rounded-[3.5rem] text-center border border-zinc-800 shadow-2xl max-w-lg w-full relative overflow-hidden">
-                      {/* Background Glow Deco */}
-                      <div
-                        className={`absolute -top-24 -left-24 w-48 h-48 blur-[100px] rounded-full ${gameState === "WIN" ? "bg-emerald-500/20" : "bg-red-500/20"}`}
-                      />
+                    START RACE
+                  </button>
+                </>
+              )}
 
-                      <h1
-                        className={`text-7xl font-black mb-4 italic uppercase tracking-tighter ${gameState === "WIN" ? "text-emerald-500" : gameState === "LOSE" ? "text-red-500" : "text-blue-500"}`}
+              {gameState === "LANG_SELECT" && (
+                <>
+                  <h2 className="text-2xl font-bold mb-6">SELECT LANGUAGE</h2>
+                  <div className="grid gap-4">
+                    <button
+                      onClick={() => {
+                        setSelectedLang("ENGLISH");
+                        setGameState("LEVEL_SELECT");
+                      }}
+                      className="p-5 bg-zinc-800 rounded-2xl font-bold hover:bg-blue-600 transition-colors"
+                    >
+                      ENGLISH
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedLang("MYANMAR");
+                        setGameState("LEVEL_SELECT");
+                      }}
+                      className="p-5 bg-zinc-800 rounded-2xl font-bold hover:bg-blue-600 transition-colors"
+                    >
+                      မြန်မာစာ
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {gameState === "LEVEL_SELECT" && (
+                <>
+                  <h2 className="text-2xl font-bold mb-6">SELECT DIFFICULTY</h2>
+                  <div className="grid gap-3">
+                    {Object.keys(LEVELS).map((k) => (
+                      <button
+                        key={k}
+                        onClick={() => initRace(k)}
+                        className="p-4 bg-zinc-800 rounded-xl font-bold hover:bg-blue-600"
                       >
-                        {gameState === "START"
-                          ? "Cyber Sprint"
-                          : gameState === "WIN"
-                            ? "Victory!"
-                            : "Defeat!"}
-                      </h1>
+                        {k}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setGameState("LANG_SELECT")}
+                      className="mt-4 text-zinc-500 underline"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </>
+              )}
 
-                      {/* Developer Info Card (WIN/LOSE မှာ ပေါ်လာမည်) */}
-                      {(gameState === "WIN" || gameState === "LOSE") && (
-                        <motion.div
-                          initial={{ y: 20, opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          transition={{ delay: 0.2 }}
-                          className="mb-10 mt-6 p-4 bg-white/5 rounded-3xl border border-white/5 flex items-center gap-4 text-left"
-                        >
-                          <img
-                            src={profile}
-                            alt="Developer"
-                            className="w-30 h-30 rounded-2xl border-2 border-zinc-700 object-cover"
-                            onError={(e) => {
-                              e.target.src =
-                                "https://ui-avatars.com/api/?name=Dev&background=random";
-                            }}
-                          />
-                          <div>
-                            <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">
-                              Game Developed By
-                            </p>
-                            <h3 className="text-xl font-bold text-white tracking-tight">
-                              Oakkar Nyunt
-                            </h3>
-                            <p className="text-zinc-400 text-xs">
-                              oakkarnyunt@gmail.com
-                            </p>
-                          </div>
-                        </motion.div>
-                      )}
-
-                      {/* Buttons Section */}
-                      {gameState === "START" ? (
-                        <div className="grid grid-cols-1 gap-4 mt-6">
-                          {Object.entries(LEVELS).map(([k, v]) => (
-                            <button
-                              key={k}
-                              onClick={() => initRace(v)}
-                              className="p-5 bg-zinc-800 rounded-2xl font-black text-xl hover:bg-blue-600 transition-all uppercase tracking-tight"
-                            >
-                              {v.label}
-                            </button>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="flex flex-col gap-4">
-                          <button
-                            onClick={() => initRace()}
-                            className={`py-6 px-16 rounded-2xl font-black text-3xl shadow-lg transition-transform active:scale-95 ${gameState === "WIN" ? "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/20" : "bg-blue-600 hover:bg-blue-500 shadow-blue-500/20"}`}
-                          >
-                            TRY AGAIN
-                          </button>
-                          <button
-                            onClick={() => setGameState("START")}
-                            className="py-4 text-zinc-500 font-bold uppercase hover:text-white transition-colors tracking-widest text-sm"
-                          >
-                            Back to Main Menu
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {(gameState === "WIN" || gameState === "LOSE") && (
+                <>
+                  <h1 className="text-6xl font-black mb-6 text-blue-500">
+                    {gameState}!
+                  </h1>
+                  <button
+                    onClick={() => setGameState("START")}
+                    className="w-full py-5 bg-blue-600 rounded-2xl font-black"
+                  >
+                    PLAY AGAIN
+                  </button>
+                </>
+              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }
