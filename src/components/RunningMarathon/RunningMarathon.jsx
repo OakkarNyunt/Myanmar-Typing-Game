@@ -60,7 +60,7 @@ export default function SprintMarathon({ onBack }) {
     if (!bg) return;
 
     bg.loop = true;
-    bg.volume = 0.3;
+    bg.volume = 0.5;
 
     if (gameState === "PLAY") {
       bg.play().catch(() => console.log("Audio waiting for user interaction"));
@@ -293,7 +293,7 @@ export default function SprintMarathon({ onBack }) {
                     <div className="text-lg font-black text-zinc-800 text-center tracking-tight">
                       {word}
                     </div>
-                    <div className="mt-1 h-5 bg-zinc-50 rounded-lg flex items-center justify-center px-3 border border-zinc-100">
+                    <div className="mt-1 h-8 bg-zinc-50 rounded-lg flex items-center justify-center px-3 border border-zinc-100">
                       <span
                         className={`text-lg font-bold ${isError ? "text-red-500" : "text-indigo-600"}`}
                       >
@@ -452,17 +452,46 @@ export default function SprintMarathon({ onBack }) {
                 </>
               )}
               {(gameState === "WIN" || gameState === "LOSE") && (
-                <>
-                  <h1 className="text-6xl font-black mb-6 text-blue-500 uppercase">
+                <div className="flex flex-col items-center">
+                  <h1
+                    className={`text-6xl font-black mb-8 italic ${gameState === "WIN" ? "text-green-500" : "text-red-500"}`}
+                  >
                     {gameState}!
                   </h1>
+
+                  {/* Profile Card for Win/Lose Screen */}
+                  <div className="bg-zinc-800/50 p-6 rounded-[2.5rem] border border-white/5 mb-8 w-full">
+                    <div className="relative inline-block mb-4">
+                      <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-blue-500 shadow-lg mx-auto bg-zinc-700">
+                        <img
+                          src={Profile}
+                          alt="Developer"
+                          className="w-full h-full object-cover"
+                          onError={(e) =>
+                            (e.target.src =
+                              "https://ui-avatars.com/api/?name=Dev&background=3b82f6&color=fff")
+                          }
+                        />
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-black text-white mb-1">
+                      Oakkar Nyunt
+                    </h3>
+                    <p className="text-blue-400 text-xs font-medium mb-3">
+                      Lead Developer
+                    </p>
+                    <div className="text-zinc-400 text-[12px] font-mono bg-black/30 py-2 px-4 rounded-full inline-block border border-white/5">
+                      📧 oakkarnyunt@gmail.com
+                    </div>
+                  </div>
+
                   <button
                     onClick={() => setGameState("START")}
-                    className="w-full py-5 bg-blue-600 rounded-2xl font-black"
+                    className="w-full py-5 bg-blue-600 hover:bg-blue-500 rounded-2xl font-black text-xl transition-all active:scale-95 shadow-lg"
                   >
                     PLAY AGAIN
                   </button>
-                </>
+                </div>
               )}
             </div>
           </motion.div>
