@@ -15,7 +15,7 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "apple-touch-icon.png", "mask-icon.svg"],
       manifest: {
-        name: "Bird Shooter Game",
+        name: "Easy Typing Game",
         short_name: "Easy Typing",
         description: "Easy Typing",
         theme_color: "#38bdf8",
