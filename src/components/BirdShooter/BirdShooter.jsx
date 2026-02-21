@@ -1,14 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import {
-  Flame,
-  Target,
-  RotateCcw,
-  Zap,
-  Heart,
-  Play,
-  Pause,
-  ArrowLeft,
-} from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { Target, RotateCcw, Heart, Play, Pause, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import useSound from "use-sound";
 import wordsData from "@/data/words.json";
@@ -61,11 +52,9 @@ export default function BirdShootingGame({ onBack }) {
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
   const [killedCount, setKilledCount] = useState(0);
   const [seconds, setSeconds] = useState(0);
-
-  // UI Assets Loading States
   const [imgLoaded, setImgLoaded] = useState({ logo: false, profile: false });
 
-  // Sound Hooks with Optimization
+  // Sound Hooks
   const [playBg, { stop: stopBg, pause: pauseBg }] = useSound(bgMusic, {
     volume: 0.2,
     loop: true,
@@ -245,7 +234,7 @@ export default function BirdShootingGame({ onBack }) {
             >
               <div className="flex items-center gap-4">
                 <button
-                  onClick={handleBack}
+                  onClick={() => setShowRestartConfirm(true)}
                   className="p-3 bg-white/80 text-slate-600 rounded-2xl hover:bg-white hover:text-sky-500 transition-all active:scale-90 shadow-sm border border-slate-100"
                 >
                   <ArrowLeft size={24} />
@@ -330,17 +319,6 @@ export default function BirdShootingGame({ onBack }) {
         <div
           className={`flex-1 relative overflow-hidden bg-linear-to-b from-sky-400 to-sky-100 transition-all duration-500 ${gameState === "playing" && lives === 1 ? "ring-20 ring-inset ring-red-500/20 shadow-[inset_0_0_100px_rgba(239,68,68,0.4)]" : ""}`}
         >
-          {gameState === "playing" && lives === 1 && (
-            <div className="absolute inset-0 bg-red-500/5 pointer-events-none z-0 animate-pulse" />
-          )}
-          {gameState === "playing" && lives === 1 && (
-            <div className="absolute top-10 left-1/2 -translate-x-1/2 pointer-events-none z-20">
-              <div className="bg-red-600 text-white px-4 py-1 rounded-full text-sm font-bold tracking-widest uppercase animate-bounce shadow-lg">
-                Last Life! Be Careful!
-              </div>
-            </div>
-          )}
-
           <AnimatePresence>
             {gameState === "countdown" && (
               <div className="absolute inset-0 flex items-center justify-center z-60 bg-black/20 backdrop-blur-[2px]">
@@ -373,19 +351,6 @@ export default function BirdShootingGame({ onBack }) {
                   {bird.text}
                 </div>
                 <div
-                  className={`z-10 -mr-2 -ml-1 transition-opacity duration-300 ${bird.status === "dying" ? "opacity-0" : "opacity-100"}`}
-                >
-                  <svg width="45" height="12" viewBox="0 0 45 12" fill="none">
-                    <path
-                      d="M0 6C3.75 6 3.75 2 7.5 2C11.25 2 11.25 10 15 10C18.75 10 18.75 2 22.5 2C26.25 2 26.25 10 30 10C33.75 10 33.75 2 37.5 2C41.25 2 41.25 6 45 6"
-                      stroke="#64748b"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      className="opacity-60"
-                    />
-                  </svg>
-                </div>
-                <div
                   className={`text-4xl inline-block transition-all duration-500 ${bird.status === "dying" ? "scale-[2.5] opacity-0 rotate-360deg blur-sm" : isPaused ? "" : "animate-bounce"} ${bird.color}`}
                   style={{
                     marginLeft: "-4px",
@@ -399,46 +364,6 @@ export default function BirdShootingGame({ onBack }) {
               </motion.div>
             ))}
 
-          {/* RESTART MODAL */}
-          <AnimatePresence>
-            {showRestartConfirm && (
-              <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-100 flex items-center justify-center p-6">
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                  animate={{ scale: 1, opacity: 1, y: 0 }}
-                  exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                  className="bg-white rounded-[2.5rem] p-10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-4 border-orange-400 max-w-sm w-full text-center relative overflow-hidden"
-                >
-                  <div className="relative z-10">
-                    <div className="text-6xl mb-4">🛸</div>
-                    <h3 className="text-2xl font-black text-slate-800 mb-4">
-                      ပြန်စတော့မလား?
-                    </h3>
-                    <div className="flex flex-col gap-3">
-                      <button
-                        onClick={() => {
-                          setGameState("menu");
-                          setBirds([]);
-                          setUserInput("");
-                          setShowRestartConfirm(false);
-                        }}
-                        className="py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black text-xl shadow-[0_5px_0_rgb(194,65,12)] active:translate-y-1 active:shadow-none transition-all"
-                      >
-                        အစက ပြန်စမယ်!
-                      </button>
-                      <button
-                        onClick={() => setShowRestartConfirm(false)}
-                        className="py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-black text-xl transition-all"
-                      >
-                        မလုပ်တော့ဘူး
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
-            )}
-          </AnimatePresence>
-
           {/* MENU AREA */}
           {gameState === "menu" && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/40 backdrop-blur-sm z-50 p-6">
@@ -447,10 +372,7 @@ export default function BirdShootingGame({ onBack }) {
                   <img
                     src={logo}
                     alt="Logo"
-                    onLoad={() =>
-                      setImgLoaded((prev) => ({ ...prev, logo: true }))
-                    }
-                    className={`w-full h-full object-cover transition-opacity duration-500 ${imgLoaded.logo ? "opacity-100" : "opacity-0"}`}
+                    className="w-full h-full object-cover"
                     onError={(e) => (e.target.src = "🏢")}
                   />
                 </div>
@@ -492,22 +414,32 @@ export default function BirdShootingGame({ onBack }) {
                     onClick={() => startGame("hard")}
                   />
                 </div>
-              </motion.div>
 
-              <div className="flex bg-white/10 p-2 rounded-3xl backdrop-blur-xl border border-white/20 mt-4 shadow-2xl">
-                <button
-                  onClick={() => setGameMode("mm")}
-                  className={`px-8 py-3 rounded-2xl font-black transition-all ${gameMode === "mm" ? "bg-sky-500 text-white shadow-lg" : "text-white hover:bg-white/10"}`}
-                >
-                  မြန်မာ
-                </button>
-                <button
-                  onClick={() => setGameMode("en")}
-                  className={`px-8 py-3 rounded-2xl font-black transition-all ${gameMode === "en" ? "bg-sky-500 text-white shadow-lg" : "text-white hover:bg-white/10"}`}
-                >
-                  English
-                </button>
-              </div>
+                <div className="flex flex-col items-center gap-4">
+                  <div className="flex bg-white/10 p-2 rounded-3xl backdrop-blur-xl border border-white/20 shadow-2xl">
+                    <button
+                      onClick={() => setGameMode("mm")}
+                      className={`px-8 py-3 rounded-2xl font-black transition-all ${gameMode === "mm" ? "bg-sky-500 text-white shadow-lg" : "text-white hover:bg-white/10"}`}
+                    >
+                      မြန်မာ
+                    </button>
+                    <button
+                      onClick={() => setGameMode("en")}
+                      className={`px-8 py-3 rounded-2xl font-black transition-all ${gameMode === "en" ? "bg-sky-500 text-white shadow-lg" : "text-white hover:bg-white/10"}`}
+                    >
+                      English
+                    </button>
+                  </div>
+
+                  {/* BACK TO MAIN MENU BUTTON */}
+                  <button
+                    onClick={handleBack}
+                    className="flex items-center gap-2 px-6 py-2 bg-slate-800/50 hover:bg-slate-700 text-white/80 rounded-full border border-white/10 transition-all text-sm font-bold uppercase tracking-widest active:scale-95"
+                  >
+                    <ArrowLeft size={16} /> Home Menu
+                  </button>
+                </div>
+              </motion.div>
 
               <div className="absolute bottom-4 right-8 flex items-center gap-4 bg-white/10 p-2 pr-6 rounded-2xl backdrop-blur-md border border-white/10">
                 <div className="text-right text-white leading-tight space-y-2">
@@ -523,10 +455,7 @@ export default function BirdShootingGame({ onBack }) {
                   <img
                     src={profile}
                     alt="Dev"
-                    onLoad={() =>
-                      setImgLoaded((prev) => ({ ...prev, profile: true }))
-                    }
-                    className={`w-full h-full object-cover transition-opacity duration-500 ${imgLoaded.profile ? "opacity-100" : "opacity-0"}`}
+                    className="w-full h-full object-cover"
                   />
                 </div>
               </div>
@@ -541,27 +470,6 @@ export default function BirdShootingGame({ onBack }) {
                 animate={{ scale: 1, opacity: 1 }}
                 className="bg-white p-8 rounded-[3rem] shadow-2xl border-4 border-blue-500 flex flex-col items-center gap-6 w-full max-w-lg"
               >
-                <div className="flex items-center gap-6 border-b-2 border-slate-100 pb-6 w-full justify-center">
-                  <div className="w-20 h-20 bg-white rounded-2xl overflow-hidden border-2 border-slate-50 shadow-md">
-                    <img
-                      src={logo}
-                      alt="Logo"
-                      className="w-full h-full object-cover"
-                      onError={(e) => (e.target.src = "🏢")}
-                    />
-                  </div>
-                  <div className="text-slate-800 text-left space-y-1">
-                    <p className="text-2xl uppercase font-black tracking-widest text-blue-600 leading-none">
-                      MT PRO
-                    </p>
-                    <p className="text-[13px] font-black italic text-slate-500">
-                      Computer Training Center
-                    </p>
-                    <p className="text-[11px] font-bold text-slate-400">
-                      တံတား-၂ မီးပွိုင့်အနီး၊ တာချီလိတ်မြို့။
-                    </p>
-                  </div>
-                </div>
                 <div className="text-center w-full space-y-4">
                   <h2 className="text-4xl font-black text-red-600 tracking-tight">
                     GAME OVER
@@ -584,27 +492,6 @@ export default function BirdShootingGame({ onBack }) {
                       </span>
                     </div>
                   </div>
-                  <p className="text-sm font-bold text-sky-600 bg-sky-50 py-1 px-4 rounded-full inline-block">
-                    🏆 Best Score: {highScore}
-                  </p>
-                </div>
-                <div className="flex items-center gap-6 bg-slate-50 p-4 rounded-3xl w-full border border-slate-100">
-                  <div className="w-24 h-24 bg-white rounded-2xl overflow-hidden border-4 border-white shadow-lg">
-                    <img
-                      src={profile}
-                      alt="Dev"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="text-left text-slate-800">
-                    <p className="text-[10px] uppercase opacity-60 font-bold">
-                      Developed By
-                    </p>
-                    <p className="text-xl font-black">Oakkar Nyunt</p>
-                    <p className="text-[12px] opacity-70 font-medium italic">
-                      oakkarnyunt@gmail.com
-                    </p>
-                  </div>
                 </div>
                 <button
                   onClick={() => setGameState("menu")}
@@ -616,79 +503,6 @@ export default function BirdShootingGame({ onBack }) {
             </div>
           )}
         </div>
-
-        {/* PAUSE OVERLAY */}
-        {gameState === "playing" && isPaused && (
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md z-40 flex flex-col items-center justify-center">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="bg-white p-10 rounded-[3rem] shadow-[0_0_50px_rgba(0,0,0,0.3)] border-4 border-sky-400 flex flex-col items-center gap-6 w-full max-w-lg"
-            >
-              <div className="flex items-center gap-6 border-b-2 border-slate-100 pb-6 w-full justify-center">
-                <div className="w-16 h-16 bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-md">
-                  <img
-                    src={logo}
-                    alt="Logo"
-                    className="w-full h-full object-cover"
-                    onError={(e) => (e.target.src = "🏢")}
-                  />
-                </div>
-                <div className="text-slate-800 text-left space-y-2">
-                  <p className="text-2xl uppercase font-black tracking-widest text-blue-600">
-                    MT PRO
-                  </p>
-                  <p className="text-[14px] font-black italic text-slate-500">
-                    Computer Training Center
-                  </p>
-                  <p className="text-[12px] font-black text-slate-500">
-                    တံတား-၂ မီးပွိုင့်အနီး၊ တာချီလိတ်မြို့။
-                  </p>
-                </div>
-              </div>
-              <div className="text-center">
-                <h2 className="text-5xl font-black text-slate-800 mb-2">
-                  PAUSED
-                </h2>
-                <div className="h-1.5 w-20 bg-sky-400 mx-auto rounded-full"></div>
-              </div>
-              <button
-                onClick={() => setIsPaused(false)}
-                className="group relative flex items-center justify-center w-24 h-24 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-[0_10px_25px_rgba(34,197,94,0.4)] transition-all active:scale-90"
-              >
-                <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-20"></span>
-                <Play
-                  fill="currentColor"
-                  size={48}
-                  className="relative z-10 ml-2"
-                />
-              </button>
-              <p className="text-green-600 font-black text-xl animate-pulse">
-                ဆက်ကစားမည်
-              </p>
-              <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-3xl w-full border border-slate-100">
-                <div className="w-25 h-25 bg-white rounded-xl overflow-hidden border-2 border-white shadow-md">
-                  <img
-                    src={profile}
-                    alt="Dev"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="text-left text-slate-800 leading-tight">
-                  <p className="text-[10px] uppercase opacity-60 font-bold mb-1">
-                    Developed By
-                  </p>
-                  <p className="text-lg font-black text-slate-900">
-                    Oakkar Nyunt
-                  </p>
-                  <p className="text-[12px] opacity-70">
-                    oakkarnyunt@gmail.com
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
 
         {/* INPUT AREA */}
         {gameState === "playing" && (
@@ -707,24 +521,52 @@ export default function BirdShootingGame({ onBack }) {
                 autoFocus
                 disabled={isPaused}
                 className={`w-full pl-18 pr-8 py-6 rounded-[2.5rem] text-3xl text-center font-black tracking-wide transition-all duration-500 border-b-8 ${isPaused ? "bg-slate-100 border-slate-200 text-slate-300 opacity-60 cursor-not-allowed" : "bg-white border-sky-500 text-slate-800 shadow-[0_10px_40px_rgba(56,189,248,0.15)] focus:outline-none focus:border-sky-600 focus:scale-[1.02] active:scale-[0.98]"}`}
-                style={{
-                  fontFamily: "'Pyidaungsu', sans-serif",
-                  lineHeight: "1.6",
-                  caretColor: "#38bdf8",
-                  letterSpacing: "0.05em",
-                }}
                 placeholder={
                   isPaused
                     ? "ဂိမ်းရပ်ထားပါသည်..."
                     : "စာလုံးကို မှန်အောင်ရိုက်ပါ..."
                 }
               />
-              {!isPaused && (
-                <div className="absolute -inset-1 bg-sky-400 rounded-[2.5rem] blur opacity-0 group-focus-within:opacity-10 transition duration-500 -z-10"></div>
-              )}
             </div>
           </div>
         )}
+
+        {/* RESTART MODAL */}
+        <AnimatePresence>
+          {showRestartConfirm && (
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-100 flex items-center justify-center p-6">
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                className="bg-white rounded-[2.5rem] p-10 shadow-2xl border-4 border-orange-400 max-w-sm w-full text-center"
+              >
+                <h3 className="text-2xl font-black text-slate-800 mb-4">
+                  ထွက်တော့မလား?
+                </h3>
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => {
+                      setGameState("menu");
+                      setBirds([]);
+                      setUserInput("");
+                      setShowRestartConfirm(false);
+                    }}
+                    className="py-4 bg-orange-500 text-white rounded-2xl font-black shadow-[0_5px_0_rgb(194,65,12)]"
+                  >
+                    ထွက်မယ်
+                  </button>
+                  <button
+                    onClick={() => setShowRestartConfirm(false)}
+                    className="py-4 bg-slate-100 text-slate-600 rounded-2xl font-black"
+                  >
+                    မထွက်တော့ဘူး
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
