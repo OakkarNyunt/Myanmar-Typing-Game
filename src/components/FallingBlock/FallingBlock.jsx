@@ -89,7 +89,7 @@ export default function FallingBlocks({ onBack }) {
     let spawner;
     if (gameState === "PLAY") {
       const spawnRate =
-        diffLevel === "HARD" ? 5000 : diffLevel === "MEDIUM" ? 4000 : 3000;
+        diffLevel === "HARD" ? 5000 : diffLevel === "MEDIUM" ? 3500 : 3000;
       spawner = setInterval(spawnWord, spawnRate);
       if (inputRef.current) inputRef.current.focus();
     }
