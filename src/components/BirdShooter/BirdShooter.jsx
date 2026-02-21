@@ -649,32 +649,51 @@ export default function BirdShootingGame({ onBack }) {
         )}
 
         {gameState === "playing" && (
-          <div className="p-8 bg-white border-t-4 border-slate-50 flex justify-center items-center shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
-            <input
-              type="text"
-              value={userInput}
-              onChange={handleInput}
-              autoFocus
-              disabled={isPaused}
-              className={`
-        w-full max-w-2xl border-4 p-6 rounded-4xl
-        text-3xl text-center font-bold tracking-wide
-        transition-all duration-300
-        ${
-          isPaused
-            ? "bg-slate-100 border-slate-200 text-slate-400 opacity-50"
-            : "bg-white border-sky-400 text-slate-800 shadow-[0_0_25px_rgba(56,189,248,0.2)] focus:outline-none focus:ring-4 focus:ring-sky-100"
-        }
-      `}
-              style={{
-                fontFamily: "'Pyidaungsu', sans-serif",
-                lineHeight: "1.6",
-                caretColor: "#38bdf8",
-              }}
-              placeholder={
-                isPaused ? "ဂိမ်းရပ်ထားပါသည်..." : "ဒီမှာ စာရိုက်ပါ..."
-              }
-            />
+          <div className="p-10 bg-linear-to-t from-slate-50 to-white border-t-2 border-slate-100 flex justify-center items-center shadow-[0_-15px_30px_rgba(0,0,0,0.03)] relative">
+            {/* Input Wrapper: ပိုမိုလှပစေရန် Container တစ်ခု ထပ်ပတ်ထားပါသည် */}
+            <div className="relative w-full max-w-2xl group transition-all duration-300">
+              {/* Input Icon: ဘယ်ဘက်က ပစ်မှတ် Icon လေး */}
+              <div className="absolute left-6 top-1/2 -translate-y-1/2 text-sky-400 z-10 group-focus-within:scale-110 transition-transform duration-300">
+                <Target
+                  size={32}
+                  className={isPaused ? "text-slate-300" : "animate-pulse"}
+                />
+              </div>
+
+              <input
+                type="text"
+                value={userInput}
+                onChange={handleInput}
+                autoFocus
+                disabled={isPaused}
+                className={`
+          w-full pl-18 pr-8 py-6 rounded-[2.5rem]
+          text-3xl text-center font-black tracking-wide
+          transition-all duration-500 border-b-8
+          ${
+            isPaused
+              ? "bg-slate-100 border-slate-200 text-slate-300 opacity-60 cursor-not-allowed"
+              : "bg-white border-sky-500 text-slate-800 shadow-[0_10px_40px_rgba(56,189,248,0.15)] focus:outline-none focus:border-sky-600 focus:scale-[1.02] active:scale-[0.98]"
+          }
+        `}
+                style={{
+                  fontFamily: "'Pyidaungsu', sans-serif",
+                  lineHeight: "1.6",
+                  caretColor: "#38bdf8",
+                  letterSpacing: "0.05em",
+                }}
+                placeholder={
+                  isPaused
+                    ? "ဂိမ်းရပ်ထားပါသည်..."
+                    : "စာလုံးကို မှန်အောင်ရိုက်ပါ..."
+                }
+              />
+
+              {/* Input Glow Effect: စာရိုက်နေစဉ် နောက်ခံ မီးရောင်ဖျော့ဖျော့လေးလင်းနေစေရန် */}
+              {!isPaused && (
+                <div className="absolute -inset-1 bg-sky-400 rounded-[2.5rem] blur opacity-0 group-focus-within:opacity-10 transition duration-500 -z-10"></div>
+              )}
+            </div>
           </div>
         )}
       </div>
