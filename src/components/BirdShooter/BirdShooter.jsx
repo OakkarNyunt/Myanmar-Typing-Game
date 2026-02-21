@@ -88,19 +88,6 @@ export default function BirdShootingGame({ onBack }) {
     }
   }, [gameState, isPaused, playBg, pauseBg, stopBg]);
 
-  // --- FUNCTIONS ---
-  const resetGame = () => {
-    stopBg();
-    setBirds([]);
-    setUserInput("");
-    setScore(0);
-    setLives(7);
-    setSpeedMultiplier(0.5); // Level ကို မူလ 0.5 ဆီ ပြန်ပို့မယ်
-    setWordIndex(0); // စာလုံးအညွှန်းကိုလည်း Reset လုပ်မယ်
-    setIsPaused(false);
-    setGameState("menu");
-  };
-
   const startGame = (level) => {
     const baseWords = [...wordsData[level]];
     const shuffledWords = baseWords.sort(() => Math.random() - 0.5);
@@ -109,8 +96,10 @@ export default function BirdShootingGame({ onBack }) {
     setWordIndex(0);
     setScore(0);
     setLives(7);
+
     setSpeedMultiplier(0.5);
     setBirds([]);
+    setUserInput("");
 
     setGameState("countdown"); // gameState ကို countdown သို့ ပြောင်းမယ်
     let count = 3;
@@ -152,6 +141,19 @@ export default function BirdShootingGame({ onBack }) {
     };
     setBirds((prev) => [...prev, newBird]);
     setWordIndex((prev) => prev + 1);
+  };
+
+  // Back နှိပ်ပြီး ထွက်သွားတဲ့အခါ ဒါမှမဟုတ် Component ပိတ်သွားတဲ့အခါ အသံကို အပြီးသတ် ပိတ်ပစ်ဖို့
+  useEffect(() => {
+    return () => {
+      stopBg(); // Component unmount ဖြစ်တာနဲ့ BG Music ကို ရပ်ပစ်မယ်
+    };
+  }, [stopBg]);
+
+  // onBack function ကို ဒီလိုလေး ပြင်ပေးလိုက်ရင် ပိုသေချာပါတယ်
+  const handleBack = () => {
+    stopBg(); // အသံအရင်ရပ်
+    onBack(); // ပြီးမှ ထွက်
   };
 
   // --- GAME LOOP ---
@@ -238,13 +240,15 @@ export default function BirdShootingGame({ onBack }) {
         {/* HEADER AREA */}
         <div className="p-6 bg-white/80 backdrop-blur-md border-b-2 border-slate-100 flex justify-between items-center z-30">
           <div className="flex items-center gap-6">
-            {/* Back Button ကို အရှေ့ဆုံးက ထည့်ထားပါတယ် */}
-            <button
-              onClick={onBack}
-              className="p-3 bg-slate-100 text-slate-600 rounded-2xl hover:bg-slate-200 transition-all active:scale-90"
-            >
-              <ArrowLeft size={28} />
-            </button>
+            {/* gameState က countdown ဖြစ်နေရင် Back Button ကို ဖျောက်ထားပါမယ် */}
+            {gameState !== "countdown" && (
+              <button
+                onClick={handleBack}
+                className="p-3 bg-slate-100 text-slate-600 rounded-2xl hover:bg-slate-200 transition-all active:scale-90"
+              >
+                <ArrowLeft size={28} />
+              </button>
+            )}
 
             <div className="flex gap-4">
               <div className="flex items-center gap-3 bg-slate-50 px-5 py-2 rounded-2xl border border-slate-100 shadow-sm">
@@ -398,6 +402,7 @@ export default function BirdShootingGame({ onBack }) {
                         onClick={() => {
                           setGameState("menu");
                           setBirds([]);
+                          setUserInput("");
                           setShowRestartConfirm(false);
                         }}
                         className="py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black text-xl shadow-[0_5px_0_rgb(194,65,12)] active:translate-y-1 active:shadow-none transition-all"

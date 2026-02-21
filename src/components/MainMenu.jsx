@@ -47,7 +47,7 @@ export default function MainMenu({ onSelectGame }) {
         <img
           src={logo}
           alt="MT PRO"
-          className="w-24 h-24 mb-4 drop-shadow-[0_0_15px_rgba(56,189,248,0.5)] rounded-full"
+          className="w-28 h-28 mb-4 drop-shadow-[0_0_15px_rgba(56,189,248,0.5)] rounded-full"
         />
         <h1 className="text-4xl font-black text-white tracking-tighter text-center">
           MT PRO{" "}
