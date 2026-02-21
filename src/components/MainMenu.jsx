@@ -1,10 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Play, ShieldCheck, User } from "lucide-react";
+import { Play } from "lucide-react";
 import logo from "@/assets/images/mtpro.png";
 import profile from "@/assets/images/Profile.jpg";
 
 export default function MainMenu({ onSelectGame }) {
+  // Loading States
+  const [logoLoaded, setLogoLoaded] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+
   const games = [
     {
       id: "bird-shooter",
@@ -17,7 +21,7 @@ export default function MainMenu({ onSelectGame }) {
     {
       id: "falling-block",
       title: "Falling Blocks",
-      desc: "အောက်ဆင်းလာတဲ့ စာလုံးတွေကို အမှန်တကယ် ရိုက်ထည့်ပြီး ကာကွယ်ပါ",
+      desc: "အောက်ဆင်းလာတဲ့ စာလုံးတွေကို မှန်ကန်အောင် ရိုက်ထည့်ပြီး ကာကွယ်ပါ",
       icon: "📦",
       color: "from-purple-500 to-pink-500",
       difficulty: "All Levels",
@@ -42,13 +46,22 @@ export default function MainMenu({ onSelectGame }) {
       <motion.div
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="flex flex-col items-center mb-10 z-10" // margin bottom ကို နည်းနည်းလျှော့ထားတယ်
+        className="flex flex-col items-center mb-10 z-10"
       >
-        <img
-          src={logo}
-          alt="MT PRO"
-          className="w-28 h-28 mb-4 drop-shadow-[0_0_15px_rgba(56,189,248,0.5)] rounded-full"
-        />
+        {/* Logo Section */}
+        <div className="relative w-28 h-28 mb-4">
+          {!logoLoaded && (
+            <div className="absolute inset-0 bg-white/5 animate-pulse rounded-full border border-white/10" />
+          )}
+          <img
+            src={logo}
+            alt="MT PRO"
+            onLoad={() => setLogoLoaded(true)}
+            className={`w-28 h-28 object-contain drop-shadow-[0_0_15px_rgba(56,189,248,0.5)] rounded-full transition-all duration-700 ${
+              logoLoaded ? "opacity-100 scale-100" : "opacity-0 scale-95"
+            }`}
+          />
+        </div>
         <h1 className="text-4xl font-black text-white tracking-tighter text-center">
           MT PRO{" "}
           <span className="text-sky-400 italic block md:inline">
@@ -58,12 +71,12 @@ export default function MainMenu({ onSelectGame }) {
         <div className="h-1 w-20 bg-sky-500 mt-2 rounded-full"></div>
       </motion.div>
 
-      {/* Game Selection Cards - အခု ၃ ခု ဘေးချင်းယှဉ်ဖြစ်သွားပါပြီ */}
+      {/* Game Selection Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl w-full z-10">
         {games.map((game, index) => (
           <motion.div
             key={game.id}
-            initial={{ y: 50, opacity: 0 }} // အောက်ကနေ အပေါ်ကို တက်လာတဲ့ effect ပြောင်းထားတယ်
+            initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: index * 0.1 }}
             whileHover={{ y: -10 }}
@@ -73,9 +86,7 @@ export default function MainMenu({ onSelectGame }) {
             <div
               className={`absolute inset-0 bg-linear-to-br ${game.color} rounded-4xl blur-xl opacity-10 group-hover:opacity-30 transition-opacity`}
             ></div>
-
-            {/* Card Size ကို ကျစ်ကျစ်လျစ်လျစ် ဖြစ်အောင် p-6 လုပ်ထားပါတယ် */}
-            <div className="relative bg-slate-800/40 backdrop-blur-xl border p-6 rounded-4xl h-full flex flex-col border-b-4 border-black/20">
+            <div className="relative bg-slate-800/40 backdrop-blur-xl border  p-6 rounded-4xl h-full flex flex-col border-b-4 border-black/20">
               <div className="flex justify-between items-start mb-4">
                 <span className="text-5xl group-hover:scale-110 transition-transform duration-300">
                   {game.icon}
@@ -84,15 +95,12 @@ export default function MainMenu({ onSelectGame }) {
                   {game.difficulty}
                 </span>
               </div>
-
               <h2 className="text-2xl font-black text-white mb-2 leading-tight">
                 {game.title}
               </h2>
-
               <p className="text-slate-400 text-sm font-medium mb-6 leading-relaxed">
                 {game.desc}
               </p>
-
               <div className="mt-auto flex items-center text-sky-400 text-sm font-black gap-2 group-hover:gap-4 transition-all">
                 <span>PLAY NOW</span>
                 <Play size={16} fill="currentColor" />
@@ -102,7 +110,7 @@ export default function MainMenu({ onSelectGame }) {
         ))}
       </div>
 
-      {/* Developer Profile Section - UI နဲ့ မျှအောင် size နည်းနည်းလျှော့ထားတယ် */}
+      {/* Developer Profile Section - Size ကို နဂိုအတိုင်း size-32 ပြန်ပြင်ထားသည် */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{
@@ -117,12 +125,20 @@ export default function MainMenu({ onSelectGame }) {
         }}
         className="mt-12 flex items-center gap-4 bg-white/5 p-3 pr-8 rounded-3xl border border-white/10 backdrop-blur-sm shadow-2xl"
       >
-        <div className="relative">
+        <div className="relative size-32">
+          {!profileLoaded && (
+            <div className="absolute inset-0 bg-white/10 animate-pulse rounded-xl" />
+          )}
+          {/* Blue blur effect behind image */}
           <div className="absolute inset-0 bg-sky-500 rounded-xl blur-md opacity-30"></div>
-          <img
+
+          <motion.img
             src={profile}
             alt="Oakkar Nyunt"
-            className="relative size-35 rounded-xl object-cover border border-white/20"
+            onLoad={() => setProfileLoaded(true)}
+            className={`relative size-32 rounded-xl object-cover border border-white/20 transition-all duration-700 ${
+              profileLoaded ? "opacity-100 scale-100" : "opacity-0 scale-95"
+            }`}
           />
         </div>
 
@@ -131,7 +147,7 @@ export default function MainMenu({ onSelectGame }) {
             Lead Developer
           </p>
           <h3 className="text-lg font-black text-white">Oakkar Nyunt</h3>
-          <p className="text-xs">oakkarnyunt@gmail.com</p>
+          <p className="text-xs text-slate-300">oakkarnyunt@gmail.com</p>
         </div>
       </motion.div>
     </div>
