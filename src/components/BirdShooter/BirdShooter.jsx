@@ -7,13 +7,12 @@ import {
   Heart,
   Play,
   Pause,
+  ArrowLeft,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import useSound from "use-sound";
 import wordsData from "@/data/words.json";
 
-// ၁။ အသံဖိုင်တွေကို ဒီမှာ တိုက်ရိုက် import လုပ်ပါ (src/assets ထဲမှာ ရှိရင် ပိုကောင်းပါတယ်)
-// တကယ်လို့ public ထဲမှာပဲ ထားချင်ရင် path ကို သေချာစစ်ပါ
 import bgMusic from "@/assets/sounds/bg-music.mp3";
 import shotSound from "@/assets/sounds/shot.mp3";
 import gameOverSound from "@/assets/sounds/gameover.wav";
@@ -21,7 +20,6 @@ import countDownSound from "@/assets/sounds/countdown.wav";
 
 import profile from "@/assets/images/Profile.jpg";
 import logo from "@/assets/images/mtpro.png";
-import { ArrowLeft } from "lucide-react";
 
 // Configurations
 const BIRD_COLORS = [
@@ -49,7 +47,8 @@ function MenuButton({ color, label, onClick }) {
 
 export default function BirdShootingGame({ onBack }) {
   // --- STATES ---
-  const [countdown, setCountdown] = useState(null); // 3, 2, 1, Go ပြဖို့
+  const [gameMode, setGameMode] = useState("mm");
+  const [countdown, setCountdown] = useState(null);
   const [gameState, setGameState] = useState("menu");
   const [isPaused, setIsPaused] = useState(false);
   const [birds, setBirds] = useState([]);
@@ -74,37 +73,58 @@ export default function BirdShootingGame({ onBack }) {
   const [playGameOver] = useSound(gameOverSound, { volume: 0.5 });
   const [playcountdown] = useSound(countDownSound, { volume: 0.5 });
 
-  // --- MUSIC LOGIC ---
-  // Pause/Play လုပ်တဲ့အခါ အသံကို ထိန်းချုပ်ဖို့
   useEffect(() => {
     if (gameState === "playing") {
       if (!isPaused) {
-        playBg(); // Resume music
+        playBg();
       } else {
-        pauseBg(); // Pause music instead of stop
+        pauseBg();
       }
     } else {
-      stopBg(); // Stop music for Menu/GameOver
+      stopBg();
     }
   }, [gameState, isPaused, playBg, pauseBg, stopBg]);
 
-  const startGame = (level) => {
-    const baseWords = [...wordsData[level]];
-    const shuffledWords = baseWords.sort(() => Math.random() - 0.5);
+  // Bug Fix: spawnBird ကို gameWords (State) အစား dynamicWords (Param) သုံးနိုင်အောင် ပြင်ဆင်ခြင်း
+  const spawnBird = (dynamicWords = null, dynamicIndex = null) => {
+    const currentWords = dynamicWords || gameWords;
+    const currentIndex = dynamicIndex !== null ? dynamicIndex : wordIndex;
 
-    setGameWords(shuffledWords);
+    if (!currentWords || currentWords.length === 0) return;
+
+    const currentWord = currentWords[currentIndex % currentWords.length];
+
+    const newBird = {
+      id: Date.now() + Math.random(),
+      text: currentWord,
+      x: -20,
+      y: Math.random() * 85 + 5,
+      speed: (Math.random() * 0.15 + 0.1) * speedMultiplier,
+      status: "flying",
+      color: BIRD_COLORS[Math.floor(Math.random() * BIRD_COLORS.length)],
+      emoji: BIRD_EMOJIS[Math.floor(Math.random() * BIRD_EMOJIS.length)],
+    };
+    setBirds((prev) => [...prev, newBird]);
+    setWordIndex((prev) => prev + 1);
+  };
+
+  const startGame = (level) => {
+    // ၁။ ချက်ချင်း Clear လုပ်ခြင်း
+    setBirds([]);
+    setUserInput("");
     setWordIndex(0);
     setScore(0);
     setLives(7);
-
     setSpeedMultiplier(0.5);
-    setBirds([]);
-    setUserInput("");
 
-    setGameState("countdown"); // gameState ကို countdown သို့ ပြောင်းမယ်
+    // ၂။ စာလုံးအသစ်များကို Shuffle လုပ်ပါ
+    const baseWords = [...wordsData[gameMode][level]];
+    const shuffledWords = baseWords.sort(() => Math.random() - 0.5);
+    setGameWords(shuffledWords);
+
+    setGameState("countdown");
     let count = 3;
     setCountdown(count);
-
     playcountdown();
 
     const timer = setInterval(() => {
@@ -116,44 +136,23 @@ export default function BirdShootingGame({ onBack }) {
       } else {
         clearInterval(timer);
         setCountdown(null);
-        setGameState("playing"); // Countdown ပြီးမှ playing သို့ ပြောင်းမယ်
-        playBg(); // Music စဖွင့်မယ်
-        spawnBird(); // ပထမဆုံးငှက်ကို တန်းလွှတ်မယ်
+        setGameState("playing");
+        playBg();
+        // ၃။ ပထမဆုံးငှက်ကို စာလုံးအသစ် (shuffledWords) နဲ့ တိုက်ရိုက် Spawn လုပ်ပါ
+        spawnBird(shuffledWords, 0);
       }
     }, 800);
   };
 
-  const spawnBird = () => {
-    if (gameWords.length === 0) return;
-    const currentWord = gameWords[wordIndex % gameWords.length];
-
-    // အမြင့် (Y) နေရာကို ၅% ကနေ ၉၀% အထိ ပိုကျယ်အောင် ခွာလိုက်ပါတယ်
-    // ဒါဆိုရင် ငှက်တွေက တစ်နေရာတည်း စုမနေဘဲ အပေါ်အောက် ပြန့်ထွက်လာမှာပါ
-    const newBird = {
-      id: Date.now() + Math.random(),
-      text: currentWord,
-      x: -20,
-      y: Math.random() * 85 + 5, // ၅% မှ ၉၀% အတွင်း Random ထွက်လာပါလိမ့်မယ်
-      speed: (Math.random() * 0.15 + 0.1) * speedMultiplier,
-      status: "flying",
-      color: BIRD_COLORS[Math.floor(Math.random() * BIRD_COLORS.length)],
-      emoji: BIRD_EMOJIS[Math.floor(Math.random() * BIRD_EMOJIS.length)],
-    };
-    setBirds((prev) => [...prev, newBird]);
-    setWordIndex((prev) => prev + 1);
-  };
-
-  // Back နှိပ်ပြီး ထွက်သွားတဲ့အခါ ဒါမှမဟုတ် Component ပိတ်သွားတဲ့အခါ အသံကို အပြီးသတ် ပိတ်ပစ်ဖို့
   useEffect(() => {
     return () => {
-      stopBg(); // Component unmount ဖြစ်တာနဲ့ BG Music ကို ရပ်ပစ်မယ်
+      stopBg();
     };
   }, [stopBg]);
 
-  // onBack function ကို ဒီလိုလေး ပြင်ပေးလိုက်ရင် ပိုသေချာပါတယ်
   const handleBack = () => {
-    stopBg(); // အသံအရင်ရပ်
-    onBack(); // ပြီးမှ ထွက်
+    stopBg();
+    onBack();
   };
 
   // --- GAME LOOP ---
@@ -182,13 +181,12 @@ export default function BirdShootingGame({ onBack }) {
       spawnInterval = setInterval(
         () => {
           spawnBird();
-          // Level တိုးနှုန်းကို 0.005 သို့ လျှော့ချလိုက်ပါ (အရင်က 0.01)
           setSpeedMultiplier((prev) => Math.min(prev + 0.004, 4));
         },
         Math.max(800, 2500 - speedMultiplier * 900),
-      ); // ငှက်ထွက်နှုန်းကိုလည်း နည်းနည်းနှေးလိုက်ပါတယ်
+      );
     } else {
-      stopBg(); // Stop music if paused or not playing
+      stopBg();
     }
 
     if (lives <= 0 && gameState === "playing") {
@@ -240,7 +238,6 @@ export default function BirdShootingGame({ onBack }) {
         {/* HEADER AREA */}
         <div className="p-6 bg-white/80 backdrop-blur-md border-b-2 border-slate-100 flex justify-between items-center z-30">
           <div className="flex items-center gap-6">
-            {/* gameState က countdown ဖြစ်နေရင် Back Button ကို ဖျောက်ထားပါမယ် */}
             {gameState !== "countdown" && (
               <button
                 onClick={handleBack}
@@ -267,7 +264,6 @@ export default function BirdShootingGame({ onBack }) {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Restart Button */}
             {gameState === "playing" && (
               <button
                 onClick={() => setShowRestartConfirm(true)}
@@ -277,7 +273,6 @@ export default function BirdShootingGame({ onBack }) {
               </button>
             )}
 
-            {/* Pause/Play Button */}
             {gameState === "playing" && (
               <button
                 onClick={() => setIsPaused(!isPaused)}
@@ -299,8 +294,6 @@ export default function BirdShootingGame({ onBack }) {
 
         {/* GAME AREA */}
         <div className="flex-1 relative overflow-hidden bg-linear-to-b from-sky-400 to-sky-100">
-          {/* COUNTDOWN OVERLAY */}
-
           <AnimatePresence>
             {gameState === "countdown" && (
               <div className="absolute inset-0 flex items-center justify-center z-60 bg-black/20 backdrop-blur-[2px]">
@@ -318,67 +311,59 @@ export default function BirdShootingGame({ onBack }) {
             )}
           </AnimatePresence>
 
-          {/* PLAYING STATE */}
-          <AnimatePresence>
-            {gameState === "playing" &&
-              birds.map((bird) => (
-                <motion.div
-                  key={bird.id}
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  style={{ left: `${bird.x}%`, top: `${bird.y}%` }}
-                  className="absolute flex items-center z-10"
+          {gameState === "playing" &&
+            birds.map((bird) => (
+              <motion.div
+                key={bird.id}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                style={{ left: `${bird.x}%`, top: `${bird.y}%` }}
+                className="absolute flex items-center z-10"
+              >
+                <div
+                  className={`relative z-20 px-4 py-1.5 rounded-xl font-bold shadow-lg border-2 text-lg transition-all duration-500 ${
+                    bird.status === "dying"
+                      ? "bg-yellow-400 text-white border-yellow-200 scale-0 opacity-0 rotate-12"
+                      : "bg-white text-slate-800 border-slate-100 shadow-md"
+                  }`}
                 >
-                  {/* ၁။ စာလုံး Box */}
-                  <div
-                    className={`relative z-20 px-4 py-1.5 rounded-xl font-bold shadow-lg border-2 text-lg transition-all duration-500 ${
-                      bird.status === "dying"
-                        ? "bg-yellow-400 text-white border-yellow-200 scale-0 opacity-0 rotate-12"
-                        : "bg-white text-slate-800 border-slate-100 shadow-md"
-                    }`}
-                  >
-                    {bird.text}
-                  </div>
+                  {bird.text}
+                </div>
 
-                  {/* ၂။ ကြိုးလေး */}
-                  <div
-                    className={`z-10 -mr-2 -ml-1 transition-opacity duration-300 ${bird.status === "dying" ? "opacity-0" : "opacity-100"}`}
-                  >
-                    <svg width="45" height="12" viewBox="0 0 45 12" fill="none">
-                      <path
-                        d="M0 6C3.75 6 3.75 2 7.5 2C11.25 2 11.25 10 15 10C18.75 10 18.75 2 22.5 2C26.25 2 26.25 10 30 10C33.75 10 33.75 2 37.5 2C41.25 2 41.25 6 45 6"
-                        stroke="#64748b"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        className="opacity-60"
-                      />
-                    </svg>
-                  </div>
+                <div
+                  className={`z-10 -mr-2 -ml-1 transition-opacity duration-300 ${bird.status === "dying" ? "opacity-0" : "opacity-100"}`}
+                >
+                  <svg width="45" height="12" viewBox="0 0 45 12" fill="none">
+                    <path
+                      d="M0 6C3.75 6 3.75 2 7.5 2C11.25 2 11.25 10 15 10C18.75 10 18.75 2 22.5 2C26.25 2 26.25 10 30 10C33.75 10 33.75 2 37.5 2C41.25 2 41.25 6 45 6"
+                      stroke="#64748b"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      className="opacity-60"
+                    />
+                  </svg>
+                </div>
 
-                  {/* ၃။ ငှက်ကလေး (သေသွားတဲ့ပုံစံကို Effect ပြောင်းထားသည်) */}
-                  <div
-                    className={`text-4xl inline-block transition-all duration-500 ${
-                      bird.status === "dying"
-                        ? "scale-[2.5] opacity-0 rotate-360deg blur-sm"
-                        : isPaused
-                          ? ""
-                          : "animate-bounce"
-                    } ${bird.color}`}
-                    style={{
-                      marginLeft: "-4px",
-                      lineHeight: "0.8",
-                      display: "inline-flex",
-                      alignItems: "center",
-                    }}
-                  >
-                    {/* Status သေသွားရင် ကြယ်ပွင့်လေး သို့မဟုတ် အမွေးပွလေး ပုံစံပြောင်းပါမယ် */}
-                    {bird.status === "dying" ? "✨" : bird.emoji}
-                  </div>
-                </motion.div>
-              ))}
-          </AnimatePresence>
+                <div
+                  className={`text-4xl inline-block transition-all duration-500 ${
+                    bird.status === "dying"
+                      ? "scale-[2.5] opacity-0 rotate-360deg blur-sm"
+                      : isPaused
+                        ? ""
+                        : "animate-bounce"
+                  } ${bird.color}`}
+                  style={{
+                    marginLeft: "-4px",
+                    lineHeight: "0.8",
+                    display: "inline-flex",
+                    alignItems: "center",
+                  }}
+                >
+                  {bird.status === "dying" ? "✨" : bird.emoji}
+                </div>
+              </motion.div>
+            ))}
 
-          {/* CUSTOM CONFIRM MODAL */}
           <AnimatePresence>
             {showRestartConfirm && (
               <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-100 flex items-center justify-center p-6">
@@ -388,7 +373,6 @@ export default function BirdShootingGame({ onBack }) {
                   exit={{ scale: 0.9, opacity: 0, y: 20 }}
                   className="bg-white rounded-[2.5rem] p-10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-4 border-orange-400 max-w-sm w-full text-center relative overflow-hidden"
                 >
-                  {/* အလှဆင် တိမ်တိုက်ပုံစံ Background လေး */}
                   <div className="absolute -top-10 -right-10 w-32 h-32 bg-orange-50 rounded-full opacity-50"></div>
 
                   <div className="relative z-10">
@@ -423,10 +407,8 @@ export default function BirdShootingGame({ onBack }) {
             )}
           </AnimatePresence>
 
-          {/* MENU STATE */}
           {gameState === "menu" && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/40 backdrop-blur-sm z-50 p-6">
-              {/* Logo */}
               <div className="absolute top-8 left-8 flex items-center gap-4 bg-white/10 p-3 pr-6 rounded-full backdrop-blur-md border border-white/20">
                 <div className="w-25 h-25 bg-white rounded-full overflow-hidden border-2 border-sky-400 shadow-inner">
                   <img
@@ -446,7 +428,6 @@ export default function BirdShootingGame({ onBack }) {
                 </div>
               </div>
 
-              {/* Center Menu */}
               <motion.div
                 initial={{ y: 30, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -455,6 +436,7 @@ export default function BirdShootingGame({ onBack }) {
                 <h1 className="text-8xl font-black text-white tracking-tighter drop-shadow-2xl">
                   BIRD <span className="text-sky-400">SHOOTER</span>
                 </h1>
+
                 <div className="text-2xl font-bold text-yellow-300 bg-black/40 px-10 py-3 rounded-full border-2 border-yellow-500/50 shadow-xl inline-block">
                   🏆 HIGH SCORE: {highScore}
                 </div>
@@ -477,7 +459,21 @@ export default function BirdShootingGame({ onBack }) {
                 </div>
               </motion.div>
 
-              {/* Developer */}
+              <div className="flex bg-white/10 p-2 rounded-3xl backdrop-blur-xl border border-white/20 mt-4 shadow-2xl">
+                <button
+                  onClick={() => setGameMode("mm")}
+                  className={`px-8 py-3 rounded-2xl font-black transition-all ${gameMode === "mm" ? "bg-sky-500 text-white shadow-lg" : "text-white hover:bg-white/10"}`}
+                >
+                  မြန်မာ
+                </button>
+                <button
+                  onClick={() => setGameMode("en")}
+                  className={`px-8 py-3 rounded-2xl font-black transition-all ${gameMode === "en" ? "bg-sky-500 text-white shadow-lg" : "text-white hover:bg-white/10"}`}
+                >
+                  English
+                </button>
+              </div>
+
               <div className="absolute bottom-4 right-8 flex items-center gap-4 bg-white/10 p-2 pr-6 rounded-2xl backdrop-blur-md border border-white/10">
                 <div className="text-right text-white leading-tight space-y-2">
                   <p className="text-[10px] uppercase opacity-60 font-bold">
@@ -499,7 +495,6 @@ export default function BirdShootingGame({ onBack }) {
             </div>
           )}
 
-          {/* GAME OVER STATE */}
           {gameState === "gameover" && (
             <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-xl z-60 flex flex-col items-center justify-center p-2">
               <motion.div
@@ -507,7 +502,6 @@ export default function BirdShootingGame({ onBack }) {
                 animate={{ scale: 1, opacity: 1 }}
                 className="bg-white p-8 rounded-[3rem] shadow-2xl border-4 border-blue-500 flex flex-col items-center gap-8 w-full max-w-lg"
               >
-                {/* ၁။ Logo */}
                 <div className="flex items-center gap-6 border-b-2 border-slate-100 pb-6 w-full justify-center">
                   <div className="w-20 h-20 bg-white rounded-2xl overflow-hidden border-2 border-slate-50 shadow-md">
                     <img
@@ -534,7 +528,6 @@ export default function BirdShootingGame({ onBack }) {
                   </div>
                 </div>
 
-                {/* ၂။ Score */}
                 <div className="text-center space-y-2">
                   <h2 className="text-4xl font-black text-red-600">
                     GAME OVER
@@ -547,7 +540,6 @@ export default function BirdShootingGame({ onBack }) {
                   </p>
                 </div>
 
-                {/* ၃။ Profile */}
                 <div className="flex items-center gap-6 bg-slate-50 p-4 rounded-3xl w-full border border-slate-100">
                   <div className="w-30 h-30 bg-white rounded-2xl overflow-hidden border-4 border-white shadow-lg">
                     <img
@@ -567,7 +559,6 @@ export default function BirdShootingGame({ onBack }) {
                   </div>
                 </div>
 
-                {/* ၄။ ပြန်လည်စတင်မည် Button */}
                 <button
                   onClick={() => setGameState("menu")}
                   className="w-full py-5 bg-green-500 hover:bg-green-600 text-white rounded-2xl font-black text-xl shadow-xl transition-all active:scale-95"
@@ -579,7 +570,6 @@ export default function BirdShootingGame({ onBack }) {
           )}
         </div>
 
-        {/* PAUSE OVERLAY (Center Content) */}
         {gameState === "playing" && isPaused && (
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md z-40 flex flex-col items-center justify-center">
             <motion.div
@@ -587,7 +577,6 @@ export default function BirdShootingGame({ onBack }) {
               animate={{ scale: 1, opacity: 1 }}
               className="bg-white p-10 rounded-[3rem] shadow-[0_0_50px_rgba(0,0,0,0.3)] border-4 border-sky-400 flex flex-col items-center gap-6 w-full max-w-lg"
             >
-              {/* ၁။ Logo Section */}
               <div className="flex items-center gap-6 border-b-2 border-slate-100 pb-6 w-full justify-center">
                 <div className="w-16 h-16 bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-md">
                   <img
@@ -613,7 +602,6 @@ export default function BirdShootingGame({ onBack }) {
                 </div>
               </div>
 
-              {/* ၂။ Pause Title */}
               <div className="text-center">
                 <h2 className="text-5xl font-black text-slate-800 mb-2">
                   PAUSED
@@ -621,12 +609,10 @@ export default function BirdShootingGame({ onBack }) {
                 <div className="h-1.5 w-20 bg-sky-400 mx-auto rounded-full"></div>
               </div>
 
-              {/* ၃။ ဆက်ကစားမည် (Play Button) */}
               <button
                 onClick={() => setIsPaused(false)}
                 className="group relative flex items-center justify-center w-24 h-24 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-[0_10px_25px_rgba(34,197,94,0.4)] transition-all active:scale-90"
               >
-                {/* ခလုတ်ဘေးက လှိုင်းတွန့် Effect */}
                 <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-20"></span>
                 <Play
                   fill="currentColor"
@@ -638,7 +624,6 @@ export default function BirdShootingGame({ onBack }) {
                 ဆက်ကစားမည်
               </p>
 
-              {/* ၄။ Developer Profile Section */}
               <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-3xl w-full border border-slate-100">
                 <div className="w-25 h-25 bg-white rounded-xl overflow-hidden border-2 border-white shadow-md">
                   <img
@@ -663,7 +648,6 @@ export default function BirdShootingGame({ onBack }) {
           </div>
         )}
 
-        {/* INPUT AREA */}
         {gameState === "playing" && (
           <div className="p-8 bg-white border-t-4 border-slate-50 flex justify-center items-center shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
             <input
@@ -683,9 +667,9 @@ export default function BirdShootingGame({ onBack }) {
         }
       `}
               style={{
-                fontFamily: "'Pyidaungsu', sans-serif", // မြန်မာစာအတွက် သေချာတဲ့ Font သုံးရန်
-                lineHeight: "1.6", // စာလုံးဆင့်တွေ မပြတ်သွားအောင်
-                caretColor: "#38bdf8", // ရိုက်နေတဲ့ Cursor အရောင်ကိုပါ ထင်ရှားစေရန်
+                fontFamily: "'Pyidaungsu', sans-serif",
+                lineHeight: "1.6",
+                caretColor: "#38bdf8",
               }}
               placeholder={
                 isPaused ? "ဂိမ်းရပ်ထားပါသည်..." : "ဒီမှာ စာရိုက်ပါ..."
