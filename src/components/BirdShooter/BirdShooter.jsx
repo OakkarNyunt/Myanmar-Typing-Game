@@ -55,7 +55,7 @@ export default function BirdShootingGame({ onBack }) {
   const [userInput, setUserInput] = useState("");
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(7);
-  const [speedMultiplier, setSpeedMultiplier] = useState(0.5);
+  const [speedMultiplier, setSpeedMultiplier] = useState(1);
   const [gameWords, setGameWords] = useState([]);
   const [wordIndex, setWordIndex] = useState(0);
   const [highScore, setHighScore] = useState(
@@ -63,6 +63,7 @@ export default function BirdShootingGame({ onBack }) {
   );
 
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+  const [killedCount, setKilledCount] = useState(0);
 
   // --- SOUND EFFECTS ---
   const [playBg, { stop: stopBg, pause: pauseBg }] = useSound(bgMusic, {
@@ -72,6 +73,28 @@ export default function BirdShootingGame({ onBack }) {
   const [playShot] = useSound(shotSound, { volume: 0.5 });
   const [playGameOver] = useSound(gameOverSound, { volume: 0.5 });
   const [playcountdown] = useSound(countDownSound, { volume: 0.5 });
+
+  const [seconds, setSeconds] = useState(0);
+
+  // Timer Logic
+  useEffect(() => {
+    let interval;
+    if (gameState === "playing" && !isPaused) {
+      interval = setInterval(() => {
+        setSeconds((prev) => prev + 1);
+      }, 1000);
+    } else if (gameState === "menu") {
+      setSeconds(0);
+    }
+    return () => clearInterval(interval);
+  }, [gameState, isPaused]);
+
+  // စက္ကန့်ကို 00:00 format ပြောင်းရန်
+  const formatTime = (secs) => {
+    const mins = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${mins.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
 
   useEffect(() => {
     if (gameState === "playing") {
@@ -116,6 +139,8 @@ export default function BirdShootingGame({ onBack }) {
     setScore(0);
     setLives(7);
     setSpeedMultiplier(0.5);
+    setSeconds(0); // အချိန်ကို Reset ချလိုက်ခြင်း
+    setKilledCount(0); // ပစ်ချထားတဲ့ အရေအတွက်ကို Reset ချခြင်း
 
     // ၂။ စာလုံးအသစ်များကို Shuffle လုပ်ပါ
     const baseWords = [...wordsData[gameMode][level]];
@@ -228,6 +253,7 @@ export default function BirdShootingGame({ onBack }) {
         prev.map((b) => (b.id === match.id ? { ...b, status: "dying" } : b)),
       );
       setScore((s) => s + 20);
+      setKilledCount((prev) => prev + 1); // ငှက်အရေအတွက် တစ်ကောင် တိုးလိုက်ခြင်း
       setUserInput("");
     }
   };
@@ -235,65 +261,137 @@ export default function BirdShootingGame({ onBack }) {
   return (
     <div className="min-h-screen bg-sky-100 flex items-center justify-center p-0 overflow-hidden font-myanmar">
       <div className="w-full h-screen bg-white shadow-2xl relative overflow-hidden flex flex-col">
-        {/* HEADER AREA */}
-        <div className="p-6 bg-white/80 backdrop-blur-md border-b-2 border-slate-100 flex justify-between items-center z-30">
-          <div className="flex items-center gap-6">
-            {gameState !== "countdown" && (
-              <button
-                onClick={handleBack}
-                className="p-3 bg-slate-100 text-slate-600 rounded-2xl hover:bg-slate-200 transition-all active:scale-90"
-              >
-                <ArrowLeft size={28} />
-              </button>
-            )}
+        {/* HEADER AREA: ကစားနေချိန်မှသာ ပေါ်မည် */}
+        <AnimatePresence>
+          {gameState === "playing" && (
+            <motion.div
+              initial={{ y: -100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -100, opacity: 0 }}
+              className="px-8 py-4 bg-white/40 backdrop-blur-xl border-b border-white/20 flex justify-between items-center z-30 shadow-sm"
+            >
+              {/* Left: Actions & Score */}
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={handleBack}
+                  className="p-3 bg-white/80 text-slate-600 rounded-2xl hover:bg-white hover:text-sky-500 transition-all active:scale-90 shadow-sm border border-slate-100"
+                >
+                  <ArrowLeft size={24} />
+                </button>
 
-            <div className="flex gap-4">
-              <div className="flex items-center gap-3 bg-slate-50 px-5 py-2 rounded-2xl border border-slate-100 shadow-sm">
-                <span className="text-3xl">🏆</span>
-                <span className="text-2xl font-black text-slate-700">
-                  {score}
-                </span>
+                <div className="flex items-center gap-2 bg-white/90 p-1.5 pr-5 rounded-2xl shadow-sm border border-slate-100">
+                  <div className="bg-yellow-400 p-2 rounded-xl shadow-inner">
+                    <Target size={20} className="text-white" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase leading-none">
+                      Score
+                    </span>
+                    <span className="text-xl font-black text-slate-700 leading-tight">
+                      {score}
+                    </span>
+                  </div>
+                </div>
+                {/* Killed Count Card */}
+                <div className="flex items-center gap-2 bg-white/90 p-1.5 pr-5 rounded-2xl shadow-sm border border-slate-100">
+                  <div className="bg-orange-500 p-2 rounded-xl shadow-inner">
+                    {/* Target Icon သို့မဟုတ် Emoji သုံးနိုင်သည် */}
+                    <span className="text-lg leading-none">🎯</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase leading-none">
+                      Killed
+                    </span>
+                    <span className="text-xl font-black text-slate-700 leading-tight">
+                      {killedCount}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-3 bg-slate-50 px-5 py-2 rounded-2xl border border-slate-100 shadow-sm">
-                <span className="text-3xl">❤️</span>
-                <span className="text-2xl font-black text-slate-700">
-                  {lives}
-                </span>
+
+              {/* Center: Stylish Timer */}
+              <div className="absolute left-1/2 -translate-x-1/2">
+                <div className="bg-slate-900 px-6 py-2 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.15)] border-b-4 border-slate-700 flex items-center gap-3">
+                  <div
+                    className={`w-2 h-2 rounded-full animate-pulse ${isPaused ? "bg-slate-500" : "bg-red-500"}`}
+                  />
+                  <span className="text-2xl font-mono font-black text-white tracking-widest">
+                    {formatTime(seconds)}
+                  </span>
+                </div>
               </div>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-4">
-            {gameState === "playing" && (
-              <button
-                onClick={() => setShowRestartConfirm(true)}
-                className="p-4 bg-orange-100 text-orange-600 rounded-2xl hover:bg-orange-200 transition-all active:scale-90 shadow-sm"
-              >
-                <RotateCcw size={28} />
-              </button>
-            )}
+              {/* Right: Health & Controls */}
+              <div className="flex items-center gap-4">
+                {/* Lives Card */}
+                <div className="flex items-center gap-2 bg-white/90 p-1.5 pr-5 rounded-2xl shadow-sm border border-slate-100">
+                  <div className="bg-red-500 p-2 rounded-xl shadow-inner">
+                    <Heart size={20} className="text-white fill-current" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase leading-none">
+                      Lives
+                    </span>
+                    <span className="text-xl font-black text-slate-700 leading-tight">
+                      {lives}
+                    </span>
+                  </div>
+                </div>
 
-            {gameState === "playing" && (
-              <button
-                onClick={() => setIsPaused(!isPaused)}
-                className={`p-4 rounded-2xl shadow-lg transition-all ${
-                  isPaused
-                    ? "bg-green-500 text-white animate-pulse"
-                    : "bg-slate-100 text-slate-600"
-                }`}
-              >
-                {isPaused ? (
-                  <Play fill="currentColor" size={28} />
-                ) : (
-                  <Pause fill="currentColor" size={28} />
-                )}
-              </button>
-            )}
-          </div>
-        </div>
+                {/* Buttons Group */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowRestartConfirm(true)}
+                    className="p-3 bg-orange-50 text-orange-600 rounded-xl hover:bg-orange-100 transition-all border border-orange-100"
+                  >
+                    <RotateCcw size={22} />
+                  </button>
+
+                  <button
+                    onClick={() => setIsPaused(!isPaused)}
+                    className={`p-3 rounded-xl shadow-md transition-all ${
+                      isPaused
+                        ? "bg-green-500 text-white animate-bounce"
+                        : "bg-white text-slate-600 border border-slate-100"
+                    }`}
+                  >
+                    {isPaused ? (
+                      <Play fill="currentColor" size={22} />
+                    ) : (
+                      <Pause fill="currentColor" size={22} />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* GAME AREA */}
-        <div className="flex-1 relative overflow-hidden bg-linear-to-b from-sky-400 to-sky-100">
+        <div
+          className={`
+    flex-1 relative overflow-hidden bg-linear-to-b from-sky-400 to-sky-100 transition-all duration-500
+    ${
+      gameState === "playing" && lives === 1
+        ? "ring-20 ring-inset ring-red-500/20 shadow-[inset_0_0_100px_rgba(239,68,68,0.4)]"
+        : ""
+    }
+`}
+        >
+          {/* အသက် ၁ ခုပဲ ကျန်ချိန်မှာ ပေါ်လာမယ့် အနီရောင် Overlay ဖျော့ဖျော့ */}
+          {gameState === "playing" && lives === 1 && (
+            <div className="absolute inset-0 bg-red-500/5 pointer-events-none z-0 animate-pulse" />
+          )}
+
+          {/* Danger Text Overlay: အသက် ၁ ခုပဲ ကျန်ကြောင်း ခဏပြချင်ရင် */}
+          {gameState === "playing" && lives === 1 && (
+            <div className="absolute top-10 left-1/2 -translate-x-1/2 pointer-events-none z-20">
+              <div className="bg-red-600 text-white px-4 py-1 rounded-full text-sm font-bold tracking-widest uppercase animate-bounce shadow-lg">
+                Last Life! Be Careful!
+              </div>
+            </div>
+          )}
+
           <AnimatePresence>
             {gameState === "countdown" && (
               <div className="absolute inset-0 flex items-center justify-center z-60 bg-black/20 backdrop-blur-[2px]">
@@ -500,8 +598,9 @@ export default function BirdShootingGame({ onBack }) {
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="bg-white p-8 rounded-[3rem] shadow-2xl border-4 border-blue-500 flex flex-col items-center gap-8 w-full max-w-lg"
+                className="bg-white p-8 rounded-[3rem] shadow-2xl border-4 border-blue-500 flex flex-col items-center gap-6 w-full max-w-lg"
               >
+                {/* Header Info */}
                 <div className="flex items-center gap-6 border-b-2 border-slate-100 pb-6 w-full justify-center">
                   <div className="w-20 h-20 bg-white rounded-2xl overflow-hidden border-2 border-slate-50 shadow-md">
                     <img
@@ -512,36 +611,52 @@ export default function BirdShootingGame({ onBack }) {
                     />
                   </div>
 
-                  <div className="text-slate-800 text-left space-y-2">
-                    <p className="text-2xl uppercase font-black tracking-widest text-blue-600">
+                  <div className="text-slate-800 text-left space-y-1">
+                    <p className="text-2xl uppercase font-black tracking-widest text-blue-600 leading-none">
                       MT PRO
                     </p>
-                    <p className="text-[14px] font-black italic text-slate-500">
+                    <p className="text-[13px] font-black italic text-slate-500">
                       Computer Training Center
                     </p>
-                    <p className="text-[12px] font-black  text-slate-500">
-                      09978209906
-                    </p>
-                    <p className="text-[12px] font-black  text-slate-500">
+                    <p className="text-[11px] font-bold text-slate-400">
                       တံတား-၂ မီးပွိုင့်အနီး၊ တာချီလိတ်မြို့။
                     </p>
                   </div>
                 </div>
 
-                <div className="text-center space-y-2">
-                  <h2 className="text-4xl font-black text-red-600">
+                {/* Stats Section: Score & Killed Count */}
+                <div className="text-center w-full space-y-4">
+                  <h2 className="text-4xl font-black text-red-600 tracking-tight">
                     GAME OVER
                   </h2>
-                  <p className="text-3xl font-bold text-slate-800">
-                    ရမှတ်: {score}
-                  </p>
-                  <p className="text-lg font-bold text-orange-500">
-                    High Score: {highScore}
+
+                  <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-4xl border border-slate-100">
+                    <div className="flex flex-col items-center justify-center p-2">
+                      <span className="text-xs font-bold text-slate-400 uppercase">
+                        Total Score
+                      </span>
+                      <span className="text-3xl font-black text-slate-800">
+                        {score}
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-center justify-center p-2 border-l border-slate-200">
+                      <span className="text-xs font-bold text-slate-400 uppercase">
+                        Birds Killed
+                      </span>
+                      <span className="text-3xl font-black text-orange-500">
+                        🎯 {killedCount}
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-sm font-bold text-sky-600 bg-sky-50 py-1 px-4 rounded-full inline-block">
+                    🏆 Best Score: {highScore}
                   </p>
                 </div>
 
+                {/* Developer Card */}
                 <div className="flex items-center gap-6 bg-slate-50 p-4 rounded-3xl w-full border border-slate-100">
-                  <div className="w-30 h-30 bg-white rounded-2xl overflow-hidden border-4 border-white shadow-lg">
+                  <div className="w-24 h-24 bg-white rounded-2xl overflow-hidden border-4 border-white shadow-lg">
                     <img
                       src={profile}
                       alt="Dev"
@@ -553,15 +668,16 @@ export default function BirdShootingGame({ onBack }) {
                       Developed By
                     </p>
                     <p className="text-xl font-black">Oakkar Nyunt</p>
-                    <p className="text-[12px] opacity-70">
+                    <p className="text-[12px] opacity-70 font-medium italic">
                       oakkarnyunt@gmail.com
                     </p>
                   </div>
                 </div>
 
+                {/* Action Button */}
                 <button
                   onClick={() => setGameState("menu")}
-                  className="w-full py-5 bg-green-500 hover:bg-green-600 text-white rounded-2xl font-black text-xl shadow-xl transition-all active:scale-95"
+                  className="w-full py-5 bg-green-500 hover:bg-green-600 text-white rounded-2xl font-black text-xl shadow-[0_5px_0_rgb(22,163,74)] transition-all active:translate-y-1 active:shadow-none"
                 >
                   ပြန်လည်စတင်မည်
                 </button>

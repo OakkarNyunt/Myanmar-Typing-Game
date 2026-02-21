@@ -21,3 +21,17 @@
 .clip-mountain-right {
   clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
 }
+
+/* Danger Zone animation/Effect */
+@keyframes danger-glow {
+  0%,
+  100% {
+    box-shadow: inset 0 0 50px rgba(239, 68, 68, 0);
+  }
+  50% {
+    box-shadow: inset 0 0 100px rgba(239, 68, 68, 0.3);
+  }
+}
+.animate-danger {
+  animation: danger-glow 1.5s infinite;
+}
