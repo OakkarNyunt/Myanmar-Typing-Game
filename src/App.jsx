@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import MainMenu from "@/components/MainMenu";
-import BirdShooter from "@/components/BirdShooter/BirdShooter"; // နဂိုရှိပြီးသား ငှက်ပစ်ဂိမ်း
+import BirdShooter from "@/components/BirdShooter/BirdShooterMain"; // နဂိုရှိပြီးသား ငှက်ပစ်ဂိမ်း
 import RunningMarathon from "@/components/RunningMarathon/SprintMarathon";
 import FallingBlocks from "@/components/FallingBlock/FallingBlocksMain"; // FallingBlock ကို import လုပ်လိုက်ပါပြီ
 
