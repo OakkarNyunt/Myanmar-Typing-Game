@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* Google Font ကို အရင်ဆုံး Import လုပ်ပါ */
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar&display=swap");
+
+:root {
+  --font-myanmar: "Noto Sans Myanmar", sans-serif;
+}
+
 @theme {
   --font-myanmar: "Noto Sans Myanmar", sans-serif;
 }
