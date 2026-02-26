@@ -22,7 +22,10 @@ export default function GameHeader({
     >
       <div className="flex items-center gap-4">
         <button
-          onClick={backToLevelSelect}
+          onClick={() => {
+            setIsPaused(false); // Game ကို pause ဖြုတ်ပေးလိုက်ပါ
+            backToLevelSelect();
+          }}
           className="p-3 bg-white/80 text-slate-600 rounded-2xl hover:bg-white hover:text-sky-500 transition-all active:scale-90 shadow-sm border border-slate-100"
         >
           <ArrowLeft size={24} />
@@ -84,7 +87,13 @@ export default function GameHeader({
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => setShowRestartConfirm(true)}
+            onClick={() => {
+              setIsPaused(false); // Game ကို pause ဖြုတ်ပေးလိုက်ပါ
+              setShowRestartConfirm(true);
+            }}
+            // onClick={() => setShowRestartConfirm(true)
+
+            // }
             className="p-3 bg-orange-50 text-orange-600 rounded-xl hover:bg-orange-100 transition-all border border-orange-100"
           >
             <RotateCcw size={22} />
