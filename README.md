@@ -35,3 +35,9 @@ https://myanmartypinggame.vercel.app
     Icons: Lucide-React
 
     Fonts: Noto Sans Myanmar (Google Fonts)
+
+📝 License
+
+ဒီ Project ကို ပညာပေး ရည်ရွယ်ချက်ဖြင့် လွတ်လပ်စွာ အသုံးပြုနိုင်ပါသည်။
+
+Developed by Oakkar Nyunt သင့်ရဲ့ Feedback တွေကို ကြိုဆိုလျက်ရှိပါတယ်!
