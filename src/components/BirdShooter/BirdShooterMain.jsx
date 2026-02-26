@@ -466,8 +466,11 @@ export default function BirdShootingGame({ onBack }) {
                 disabled={isPaused}
                 className={`w-full pl-18 pr-8 py-6 rounded-[2.5rem] text-3xl text-center font-black tracking-wide transition-all duration-500 border-b-8 ${isPaused ? "bg-slate-100 border-slate-200 text-slate-300 opacity-60 cursor-not-allowed" : "bg-white border-sky-500 text-slate-800 shadow-xl focus:outline-none focus:border-sky-600 focus:scale-[1.02]"}`}
                 style={{
-                  fontFamily: "'Pyidaungsu', sans-serif",
-                  lineHeight: "1.6",
+                  /* CSS Variable ကို ပြန်သုံးပါ သို့မဟုတ် Noto Sans Myanmar ကို တိုက်ရိုက်ပေးပါ */
+                  fontFamily:
+                    "var(--font-myanmar), 'Noto Sans Myanmar', sans-serif",
+                  lineHeight: "1.8", // မြန်မာစာလုံးတွေ အပေါ်အောက် မပြတ်စေရန် 1.8 က ပိုသင့်တော်ပါတယ်
+                  paddingTop: "12px", // ဗျည်းတွေ အပေါ်ကပ်မနေအောင် နည်းနည်းချပေးပါ
                 }}
                 placeholder={
                   isPaused
