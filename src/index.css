@@ -1,20 +1,19 @@
 @import "tailwindcss";
 
-/* Google Font ကို အရင်ဆုံး Import လုပ်ပါ */
-@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar&display=swap");
-
 :root {
   --font-myanmar: "Noto Sans Myanmar", sans-serif;
 }
 
 @theme {
-  --font-myanmar: "Noto Sans Myanmar", sans-serif;
+  /* Noto Sans Myanmar ကို အရှေ့ဆုံးမှာထားပြီး သေချာအောင် " " ထည့်ပါ */
+  --font-myanmar: "Noto Sans Myanmar", "Pyidaungsu", "Padauk", sans-serif;
 }
 
 @layer base {
   body {
     @apply bg-[#0f172a] text-white antialiased;
-    font-family: var(--font-myanmar);
+    /* !important ထည့်ပေးခြင်းဖြင့် တခြား font တွေ လာမနှောင့်ယှက်နိုင်တော့ပါ */
+    font-family: var(--font-myanmar) !important;
   }
 }
 
