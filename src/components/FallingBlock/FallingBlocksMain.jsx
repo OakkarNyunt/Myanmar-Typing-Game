@@ -3,7 +3,7 @@ import HUD from "@/components/FallingBlock/HUD";
 import FallingBlock from "@/components/FallingBlock/FallingBlocks";
 import GameModal from "@/components/FallingBlock/GameModal";
 
-const GAME_WIDTH = 800;
+const GAME_WIDTH = 900;
 const GAME_HEIGHT = 700;
 
 export default function FallingBlocks({ onBack }) {
@@ -87,7 +87,7 @@ export default function FallingBlocks({ onBack }) {
     let spawner;
     if (gameState === "PLAY") {
       const spawnRate =
-        diffLevel === "HARD" ? 5000 : diffLevel === "MEDIUM" ? 3500 : 3000;
+        diffLevel === "HARD" ? 5000 : diffLevel === "MEDIUM" ? 3600 : 2800;
       spawner = setInterval(spawnWord, spawnRate);
       inputRef.current?.focus();
     }
@@ -114,7 +114,7 @@ export default function FallingBlocks({ onBack }) {
   const handleStart = () => {
     if (gameState === "START" || gameState === "GAMEOVER") {
       setFallingWords([]);
-      setLives(7);
+      setLives(10);
       setScore(0);
       setCorrectCount(0);
       setTimerSeconds(0);

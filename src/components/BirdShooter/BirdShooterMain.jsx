@@ -47,7 +47,7 @@ export default function BirdShootingGame({ onBack }) {
   const [birds, setBirds] = useState([]);
   const [userInput, setUserInput] = useState("");
   const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(7);
+  const [lives, setLives] = useState(10);
   const [speedMultiplier, setSpeedMultiplier] = useState(1);
   const [gameWords, setGameWords] = useState([]);
   const [wordIndex, setWordIndex] = useState(0);
@@ -60,7 +60,7 @@ export default function BirdShootingGame({ onBack }) {
   const [imgLoaded, setImgLoaded] = useState({ logo: false, profile: false });
 
   const [playBg, { stop: stopBg, pause: pauseBg }] = useSound(bgMusic, {
-    volume: 0.2,
+    volume: 0.5,
     loop: true,
     interrupt: true,
   });
@@ -118,7 +118,7 @@ export default function BirdShootingGame({ onBack }) {
     setUserInput("");
     setWordIndex(0);
     setScore(0);
-    setLives(7);
+    setLives(10);
     setSpeedMultiplier(0.5);
     setSeconds(0);
     setKilledCount(0);
@@ -204,7 +204,7 @@ export default function BirdShootingGame({ onBack }) {
       setBirds((prev) =>
         prev.map((b) => (b.id === match.id ? { ...b, status: "dying" } : b)),
       );
-      setScore((s) => s + 20);
+      setScore((s) => s + 10);
       setKilledCount((prev) => prev + 1);
       setUserInput("");
     }

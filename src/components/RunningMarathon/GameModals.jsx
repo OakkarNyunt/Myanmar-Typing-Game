@@ -160,6 +160,12 @@ export default function GameModals({
                 >
                   PLAY AGAIN
                 </button>
+                <button
+                  onClick={onBack}
+                  className="mt-4 text-zinc-500 text-sm font-bold"
+                >
+                  Quit Game
+                </button>
               </div>
             )}
           </div>

@@ -6,9 +6,9 @@ import { AIRunner, PlayerRunner } from "@/components/RunningMarathon/Character";
 import GameModals from "@/components/RunningMarathon/GameModals";
 
 const LEVELS = {
-  EASY: { aiSpeed: 1.2, dist: 15000, label: "EASY" },
-  MEDIUM: { aiSpeed: 2.2, dist: 25000, label: "MEDIUM" },
-  HARD: { aiSpeed: 3.2, dist: 35000, label: "HARD" },
+  EASY: { aiSpeed: 1.2, dist: 30000, label: "EASY" },
+  MEDIUM: { aiSpeed: 2.2, dist: 45000, label: "MEDIUM" },
+  HARD: { aiSpeed: 3.2, dist: 55000, label: "HARD" },
   Pro: { aiSpeed: 4.2, dist: 45000, label: "VERY HARD" },
 };
 
@@ -49,7 +49,7 @@ export default function SprintMarathon({ onBack }) {
     const bg = sounds.current.bg;
     if (!bg) return;
     bg.loop = true;
-    bg.volume = 0.5;
+    bg.volume = 0.8;
     if (gameState === "PLAY") bg.play().catch(() => {});
     else {
       bg.pause();
